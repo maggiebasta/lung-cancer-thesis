@@ -165,7 +165,7 @@ def download_transform_split(
     ]
     ids = [f"LIDC-IDRI/LIDC-IDRI-{id_num}" for id_num in id_nums]
     for i, pid in enumerate(ids):
-        sys.stdout.write(f"\rPreparing...{i}/{num_patients}")
+        sys.stdout.write(f"\rPreparing...{i+1}/{num_patients}")
         sys.stdout.flush()
         keys = get_s3_keys(prefix=pid)
         download_from_s3(keys, raw_path)
