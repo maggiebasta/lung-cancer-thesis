@@ -163,9 +163,10 @@ def download_transform_split(
     id_nums = [
         '0'*(4-len(n))+n for n in [str(i) for i in range(1, num_patients+1)]
     ]
-
     ids = [f"LIDC-IDRI/LIDC-IDRI-{id_num}" for id_num in id_nums]
     for i, pid in enumerate(ids):
+        sys.stdout.write(f"\rPreparing...{i}/{num_patients}")
+        sys.stdout.flush()
         keys = get_s3_keys(prefix=pid)
         download_from_s3(keys, raw_path)
 
@@ -174,10 +175,14 @@ def download_transform_split(
         if delete_raw:
             shutil.rmtree(f"{raw_path}{pid}/")
 
+    print(f"\nSplitting...")
+
     _build_test_train(prepped_path)
 
     if delete_raw:
         shutil.rmtree(raw_path)
+
+    print(f"Complete.")
 
 
 if __name__ == "__main__":
