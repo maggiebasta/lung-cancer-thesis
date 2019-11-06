@@ -185,9 +185,4 @@ def get_mask(img, rois):
     mask = np.array([float(m) for m in mask])
     img_mask = mask.reshape(x.shape).T
 
-    # include boundaries
-    for roi in rois:
-        for p in roi:
-            img_mask[p] = 1.
-
     return img_mask

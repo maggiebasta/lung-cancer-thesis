@@ -90,6 +90,8 @@ def _prepare(patient_id, raw_path, prepped_path, idx):
         if size > largest_size:
             largest_pair = [img, mask]
             largest_size = size
+    if not largest_size:
+        return
     im, msk = largest_pair
 
     # save prepared image and mask in properly constructed directory
