@@ -33,16 +33,14 @@ def find_ct_path(raw_path, patient_id):
         os.path.join(dir2, d) for d in os.listdir(dir2)
         if os.path.isdir(os.path.join(dir2, d))
     ][0]
-    im1 = os.path.join(imdir1, os.listdir(imdir1)[0])
-    im2 = os.path.join(imdir2, os.listdir(imdir2)[0])
-    if not im1.endswith('dcm'):
-        im1 = os.path.join(imdir1, os.listdir(imdir1)[1])
-    if not im2.endswith('dcm'):
-        im2 = os.path.join(imdir2, os.listdir(imdir2)[1])
+    im1 = os.path.join(
+        imdir1,
+        [im for im in os.listdir(imdir1) if im.endswith('dcm')][0]
+    )
     type1 = pydicom.dcmread(im1)[('0008', '0060')].value
     if type1 == 'CT':
         return imdir1
-    else: 
+    else:
         return imdir2
 
 
