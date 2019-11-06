@@ -66,7 +66,7 @@ def download_from_s3(keys, dest_path, bucket='mbasta-thesis-2019'):
             s3.download_file(bucket, key, dest_file)
 
 
-def _prepare(patient_id, raw_path, prepped_path, idx):
+def _prepare(patient_id, raw_path, prepped_path):
     """
     Called from download_transform_split. Given an output path, properly
     formats raw LIDC-IDRI images into prepared form and saves them in specified
@@ -90,13 +90,14 @@ def _prepare(patient_id, raw_path, prepped_path, idx):
         if size > largest_size:
             largest_pair = [img, mask]
             largest_size = size
-    if not largest_size:
+    if largest_size:
         return
     im, msk = largest_pair
 
     # save prepared image and mask in properly constructed directory
     while True:
         try:
+            idx = len(os.listdir(f"{prepped_path}/prepared/image/"))
             img = Image.fromarray(im)
             mask = Image.fromarray(msk)
             img.save(f"{prepped_path}/prepared/image/{idx}.tif", "TIFF")
@@ -172,7 +173,7 @@ def download_transform_split(
         keys = get_s3_keys(prefix=pid)
         download_from_s3(keys, raw_path)
 
-        _prepare(pid, raw_path, prepped_path, i)
+        _prepare(pid, raw_path, prepped_path)
 
         if delete_raw:
             shutil.rmtree(f"{raw_path}{pid}/")
