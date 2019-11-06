@@ -24,7 +24,7 @@ def find_ct_path(raw_path, patient_id):
     dir1, dir2 = [
         os.path.join(patient_dir, d) for d in os.listdir(patient_dir)
         if os.path.isdir(os.path.join(patient_dir, d))
-    ]
+    ][:2]
     imdir1 = [
         os.path.join(dir1, d) for d in os.listdir(dir1)
         if os.path.isdir(os.path.join(dir1, d))

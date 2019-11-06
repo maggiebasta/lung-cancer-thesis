@@ -90,7 +90,7 @@ def _prepare(patient_id, raw_path, prepped_path):
         if size > largest_size:
             largest_pair = [img, mask]
             largest_size = size
-    if largest_size:
+    if not largest_size:
         return
     im, msk = largest_pair
 
