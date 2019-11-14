@@ -21,14 +21,19 @@ def find_ct_path(raw_path, patient_id):
     return: path to the folder containing CT images for a given patient
     """
     patient_dir = raw_path + patient_id
-    dir1, dir2 = [
+    dirs = [
         os.path.join(patient_dir, d) for d in os.listdir(patient_dir)
         if os.path.isdir(os.path.join(patient_dir, d))
-    ][:2]
+    ]
+    dir1 = dirs[0]
     imdir1 = [
         os.path.join(dir1, d) for d in os.listdir(dir1)
         if os.path.isdir(os.path.join(dir1, d))
     ][0]
+    if len(dirs) == 1:
+        return imdir1
+
+    dir2 = dirs[1]
     imdir2 = [
         os.path.join(dir2, d) for d in os.listdir(dir2)
         if os.path.isdir(os.path.join(dir2, d))
@@ -146,7 +151,12 @@ def visualize_contours(raw_path, patient_df):
         rois = row[1]['ROIs']
 
         ds = pydicom.dcmread(path)
-        ax.imshow(ds.pixel_array, cmap=plt.cm.bone, extent=[0, 512, 512, 0])
+        ax.imshow(
+            ds.pixel_array,
+            vmin=0, vmax=1024,
+            cmap='gray',
+            extent=[0, 512, 512, 0]
+        )
         for roi in rois:
             xs, ys = list(zip(*roi))
             ax.scatter(xs, ys, s=1, alpha=.5)

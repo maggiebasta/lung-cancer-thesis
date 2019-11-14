@@ -3,10 +3,14 @@ import shutil
 import sys
 
 import boto3
+import cv2 as cv
 import pydicom
-import lidc_helpers
-from PIL import Image
+import numpy as np
+
+from skimage.io import imsave
 from sklearn.model_selection import train_test_split
+
+import lidc_helpers
 
 
 def get_s3_keys(prefix, bucket='mbasta-thesis-2019'):
@@ -94,14 +98,20 @@ def _prepare(patient_id, raw_path, prepped_path):
         return
     im, msk = largest_pair
 
+    # clip then normalize image to grayscale (0, 256)
+    im = np.clip(im, 0, 1024)
+    im = cv.normalize(im,  np.zeros(img.shape), 0, 255, cv.NORM_MINMAX)
+
+    # resize to 256, 256
+    im = cv.resize(im, dsize=(256, 256)).astype(np.uint8)
+    msk = cv.resize(msk, dsize=(256, 256)).astype(np.uint8)
+
     # save prepared image and mask in properly constructed directory
     while True:
         try:
             idx = len(os.listdir(f"{prepped_path}/prepared/image/"))
-            img = Image.fromarray(im)
-            mask = Image.fromarray(msk)
-            img.save(f"{prepped_path}/prepared/image/{idx}.tif", "TIFF")
-            mask.save(f"{prepped_path}/prepared/label/{idx}.tif", "TIFF")
+            imsave(f"{prepped_path}/prepared/image/{idx}.png", im)
+            imsave(f"{prepped_path}/prepared/label/{idx}.png", msk)
 
         except FileNotFoundError:
             if not os.path.isdir(prepped_path):
@@ -130,21 +140,21 @@ def _build_test_train(datapath):
     idxs = range(len(os.listdir(f"{datapath}/prepared/image/")))
     train_idxs, test_idxs = train_test_split(idxs, test_size=.2)
     for i, idx in enumerate(train_idxs):
-        im_source = f"{datapath}/prepared/image/{idx}.tif"
-        im_dest = f"{datapath}/train/image/{i}.tif"
+        im_source = f"{datapath}/prepared/image/{idx}.png"
+        im_dest = f"{datapath}/train/image/{i}.png"
         shutil.copyfile(im_source, im_dest)
 
-        msk_source = f"{datapath}/prepared/label/{idx}.tif"
-        msk_dest = f"{datapath}/train/label/{i}.tif"
+        msk_source = f"{datapath}/prepared/label/{idx}.png"
+        msk_dest = f"{datapath}/train/label/{i}.png"
         shutil.copy(msk_source, msk_dest)
 
     for i, idx in enumerate(test_idxs):
-        im_source = f"{datapath}/prepared/image/{idx}.tif"
-        im_dest = f"{datapath}/test/image/{i}.tif"
+        im_source = f"{datapath}/prepared/image/{idx}.png"
+        im_dest = f"{datapath}/test/image/{i}.png"
         shutil.copyfile(im_source, im_dest)
 
-        msk_source = f"{datapath}/prepared/label/{idx}.tif"
-        msk_dest = f"{datapath}/test/label/{i}.tif"
+        msk_source = f"{datapath}/prepared/label/{idx}.png"
+        msk_dest = f"{datapath}/test/label/{i}.png"
         shutil.copy(msk_source, msk_dest)
 
 
