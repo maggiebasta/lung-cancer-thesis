@@ -153,7 +153,7 @@ def visualize_contours(raw_path, patient_df):
         ds = pydicom.dcmread(path)
         ax.imshow(
             ds.pixel_array,
-            vmin=0, vmax=1024,
+            vmin=0, vmax=2048,
             cmap='gray',
             extent=[0, 512, 512, 0]
         )

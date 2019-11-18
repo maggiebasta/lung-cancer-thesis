@@ -12,6 +12,10 @@ from sklearn.model_selection import train_test_split
 
 import lidc_helpers
 
+"""
+Data Downloader:
+Downloads and prepares raw LIDC-IDRI data from S3 storage
+"""
 
 def get_s3_keys(prefix, bucket='mbasta-thesis-2019'):
     """
@@ -98,9 +102,14 @@ def _prepare(patient_id, raw_path, prepped_path):
         return
     im, msk = largest_pair
 
-    # clip then normalize image to grayscale (0, 256)
-    im = np.clip(im, 0, 1024)
-    im = cv.normalize(im,  np.zeros(img.shape), 0, 255, cv.NORM_MINMAX)
+    # normalize image
+    im = cv.normalize(
+        im,
+        np.zeros(im.shape),
+        0,
+        255,
+        cv.NORM_MINMAX
+    )
 
     # resize to 256, 256
     im = cv.resize(im, dsize=(256, 256)).astype(np.uint8)
