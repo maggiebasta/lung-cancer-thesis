@@ -32,6 +32,8 @@ def get_s3_keys(prefix, bucket='mbasta-thesis-2019'):
     kwargs = {'Bucket': bucket, 'Prefix': prefix}
     while True:
         resp = s3.list_objects_v2(**kwargs)
+        if not resp.get('Contents'):
+            return
         for obj in resp['Contents']:
             keys.append(obj['Key'])
 
@@ -190,12 +192,13 @@ def download_transform_split(
         sys.stdout.write(f"\rPreparing...{i+1}/{num_patients}")
         sys.stdout.flush()
         keys = get_s3_keys(prefix=pid)
-        download_from_s3(keys, raw_path)
+        if keys:
+            download_from_s3(keys, raw_path)
 
-        _prepare(pid, raw_path, prepped_path)
+            _prepare(pid, raw_path, prepped_path)
 
-        if delete_raw:
-            shutil.rmtree(f"{raw_path}{pid}/")
+            if delete_raw:
+                shutil.rmtree(f"{raw_path}{pid}/")
 
     print(f"\nSplitting...")
 
