@@ -1,4 +1,4 @@
-# Segmentation
+# U-Net 2D
 
 ## Pipeline
 1. Download, extract and format data from S3 (call to data_downloader.py or run cells in downloader.ipynb) 
