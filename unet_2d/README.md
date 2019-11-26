@@ -15,7 +15,6 @@
 - data_generator.py: implements Keras Image generators for U-Net
 - dice_loss.py: implements dice coefficient loss function for Keras models
 - lidc_helpers.py: helper functions for EDA and data extraction
-- preprocess.py: preprocessing functions for enhancement (not currently used in the pipeline)
 - unet.py: implementation of the U-Net architecture 
 
 
