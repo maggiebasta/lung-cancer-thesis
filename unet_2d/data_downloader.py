@@ -130,17 +130,11 @@ def _prepare(patient_id, raw_path, prepped_path):
             os.mkdir(f"{prepped_path}/prepared")
             os.mkdir(f"{prepped_path}/prepared/image")
             os.mkdir(f"{prepped_path}/prepared/label")
-            os.mkdir(f"{prepped_path}/train")
-            os.mkdir(f"{prepped_path}/train/image")
-            os.mkdir(f"{prepped_path}/train/label")
-            os.mkdir(f"{prepped_path}/test")
-            os.mkdir(f"{prepped_path}/test/image")
-            os.mkdir(f"{prepped_path}/test/label")
             continue
         break
 
 
-def _build_test_train(datapath):
+def test_train_split(datapath, trainpath, testpath):
     """
     Called from download_transform_split. Creates training and test sets from
     prepared images
@@ -148,28 +142,36 @@ def _build_test_train(datapath):
     :param datapath: the directory containing prepared, train, and test folders
     :return: None
     """
-    idxs = range(len(os.listdir(f"{datapath}/prepared/image/")))
+
+    os.mkdir(trainpath)
+    os.mkdir(f"{trainpath}/image")
+    os.mkdir(f"{trainpath}/label")
+    os.mkdir(testpath)
+    os.mkdir(f"{testpath}/image")
+    os.mkdir(f"{testpath}/label")
+
+    idxs = range(len(os.listdir(f"{datapath}/image/")))
     train_idxs, test_idxs = train_test_split(idxs, test_size=.2)
     for i, idx in enumerate(train_idxs):
-        im_source = f"{datapath}/prepared/image/{idx}.png"
-        im_dest = f"{datapath}/train/image/{i}.png"
+        im_source = f"{datapath}/image/{idx}.png"
+        im_dest = f"{trainpath}/image/{i}.png"
         shutil.copyfile(im_source, im_dest)
 
-        msk_source = f"{datapath}/prepared/label/{idx}.png"
-        msk_dest = f"{datapath}/train/label/{i}.png"
+        msk_source = f"{datapath}/label/{idx}.png"
+        msk_dest = f"{trainpath}/label/{i}.png"
         shutil.copy(msk_source, msk_dest)
 
     for i, idx in enumerate(test_idxs):
-        im_source = f"{datapath}/prepared/image/{idx}.png"
-        im_dest = f"{datapath}/test/image/{i}.png"
+        im_source = f"{datapath}/image/{idx}.png"
+        im_dest = f"{testpath}/image/{i}.png"
         shutil.copyfile(im_source, im_dest)
 
-        msk_source = f"{datapath}/prepared/label/{idx}.png"
-        msk_dest = f"{datapath}/test/label/{i}.png"
+        msk_source = f"{datapath}/label/{idx}.png"
+        msk_dest = f"{testpath}/label/{i}.png"
         shutil.copy(msk_source, msk_dest)
 
 
-def download_transform_split(
+def download_and_extract(
     num_patients,
     raw_path='data/raw/',
     prepped_path='data/',
@@ -199,10 +201,6 @@ def download_transform_split(
 
             if delete_raw:
                 shutil.rmtree(f"{raw_path}{pid}/")
-
-    print(f"\nSplitting...")
-
-    _build_test_train(prepped_path)
 
     if delete_raw:
         shutil.rmtree(raw_path)

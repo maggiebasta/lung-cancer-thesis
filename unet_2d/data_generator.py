@@ -14,43 +14,6 @@ and:
 https://github.com/a-martyn/unet/blob/master/model/data_loader.py
 """
 
-# Keras Image Data Generator Templates for train and test images and labels
-# ----------------------------------------------------------------------------
-image_generator_train = ImageDataGenerator(
-    rotation_range=2,
-    brightness_range=[0.8, 1.2],
-    rescale=1./255,
-    shear_range=0.05,
-    horizontal_flip=True,
-    fill_mode='reflect',
-    data_format='channels_last',
-    validation_split=0.0
-)
-label_generator_train = ImageDataGenerator(
-    rotation_range=2,
-    # No brightness transform on target mask
-    # No rescale transform on target mask
-    shear_range=0.05,
-    horizontal_flip=True,
-    fill_mode='reflect',
-    data_format='channels_last',
-    validation_split=0.0
-)
-
-image_generator_test = ImageDataGenerator(
-    rescale=1./255,
-    fill_mode='reflect',
-    data_format='channels_last',
-    validation_split=0.0
-)
-
-label_generator_test = ImageDataGenerator(
-    # No rescale transform on target mask
-    fill_mode='reflect',
-    data_format='channels_last',
-    validation_split=0.0
-)
-
 
 # Instantiated joined image and mask generators for model input
 # ----------------------------------------------------------------------------
