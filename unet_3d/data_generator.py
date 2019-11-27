@@ -59,6 +59,16 @@ label_generator_test = ImageDataGenerator(
 def generator(directory, input_gen, target_gen, batch_sz=2, img_sz=(256, 256)):
 
     # Input generators
+    x0_gen = input_gen.flow_from_directory(
+        directory,
+        target_size=img_sz,
+        color_mode="grayscale",
+        classes=['image0'],
+        class_mode=None,
+        batch_size=batch_sz,
+        seed=1,
+        interpolation='nearest'
+    )
     x1_gen = input_gen.flow_from_directory(
         directory,
         target_size=img_sz,
@@ -99,8 +109,48 @@ def generator(directory, input_gen, target_gen, batch_sz=2, img_sz=(256, 256)):
         seed=1,
         interpolation='nearest'
     )
+    x5_gen = input_gen.flow_from_directory(
+        directory,
+        target_size=img_sz,
+        color_mode="grayscale",
+        classes=['image5'],
+        class_mode=None,
+        batch_size=batch_sz,
+        seed=1,
+        interpolation='nearest'
+    )
+    x6_gen = input_gen.flow_from_directory(
+        directory,
+        target_size=img_sz,
+        color_mode="grayscale",
+        classes=['image6'],
+        class_mode=None,
+        batch_size=batch_sz,
+        seed=1,
+        interpolation='nearest'
+    )
+    x7_gen = input_gen.flow_from_directory(
+        directory,
+        target_size=img_sz,
+        color_mode="grayscale",
+        classes=['image7'],
+        class_mode=None,
+        batch_size=batch_sz,
+        seed=1,
+        interpolation='nearest'
+    )
 
     # Target generators
+    y0_gen = input_gen.flow_from_directory(
+        directory,
+        target_size=img_sz,
+        color_mode="grayscale",
+        classes=['label0'],
+        class_mode=None,
+        batch_size=batch_sz,
+        seed=1,
+        interpolation='nearest'
+    )
     y1_gen = input_gen.flow_from_directory(
         directory,
         target_size=img_sz,
@@ -141,14 +191,44 @@ def generator(directory, input_gen, target_gen, batch_sz=2, img_sz=(256, 256)):
         seed=1,
         interpolation='nearest'
     )
+    y5_gen = input_gen.flow_from_directory(
+        directory,
+        target_size=img_sz,
+        color_mode="grayscale",
+        classes=['label5'],
+        class_mode=None,
+        batch_size=batch_sz,
+        seed=1,
+        interpolation='nearest'
+    )
+    y6_gen = input_gen.flow_from_directory(
+        directory,
+        target_size=img_sz,
+        color_mode="grayscale",
+        classes=['label6'],
+        class_mode=None,
+        batch_size=batch_sz,
+        seed=1,
+        interpolation='nearest'
+    )
+    y47gen = input_gen.flow_from_directory(
+        directory,
+        target_size=img_sz,
+        color_mode="grayscale",
+        classes=['label7'],
+        class_mode=None,
+        batch_size=batch_sz,
+        seed=1,
+        interpolation='nearest'
+    )
 
     generator = zip(
-        x1_gen, x2_gen, x3_gen, x4_gen,
-        y1_gen, y2_gen, y3_gen, y4_gen
+        x0_gen, x1_gen, x2_gen, x3_gen, x4_gen, x5_gen, x6_gen, x7_gen,
+        y0_gen, y1_gen, y2_gen, y3_gen, y4_gen, y5_gen, y6_gen, y7_gen
     )
-    for (x1, x2, x3, x4, y1, y2, y3, y4) in generator:
-        X = np.array([x1, x2, x3, x4]).reshape(batch_sz, 256, 256, 4, 1)
-        Y = np.array([y1, y2, y3, y4]).reshape(batch_sz, 256, 256, 4, 1)
+    for (x0, x1, x2, x3, x4, y1, y2, y3, y4) in generator:
+        X = np.array([x0, x1, x2, x3, x4, x5, x6, x7]).reshape(batch_sz, 256, 256, 8, 1)
+        Y = np.array([y0, y1, y2, y3, y4, y5, y6, y7]).reshape(batch_sz, 256, 256, 8, 1)
         yield (X, Y)
 
 

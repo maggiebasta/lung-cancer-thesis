@@ -1,6 +1,7 @@
 import itertools
 import math 
 import os
+import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -134,13 +135,12 @@ def get_patient_df(raw_path, patient_id):
     df2 = get_rois_df(ct_path)
     return df2.join(df1, how='inner').sort_values(by=['z-position'])
 
-
+    
 def get_patient_df_v2(raw_path, patient_id):
     """
     Given a patient ID, returns a "summarizing" dataframe for the contoured
     images (of interest) for the patient - that is for each image, the UID,
     the ROI and the path to 4 sequential images we will train on
-
     :param raw_path: path to raw data
     :param patient_id: string of patient ID of form LIDC-IDRI-XXXX
     return: dataframe with image UIDs, paths to images w/ contours and contours
@@ -149,25 +149,27 @@ def get_patient_df_v2(raw_path, patient_id):
     ct_path = find_ct_path(raw_path, patient_id)
     df1 = get_uids_df(ct_path)
     df2 = get_rois_df(ct_path)
-    df2 = df2.join(df1, how='inner').sort_values(by=['z-position'])
-    df2 = df2.reset_index()
+
+    df_all = df1.join(df2, how='left').sort_values(by=['z-position'])
+    df_all = df_all.reset_index()
+    df_rois = df_all.dropna()
+
     groups = {}
     prev_z = float('inf')
     last_idx = 0
-    for i, v in df2.iterrows():
+    for i, v in df_rois.iterrows():
         cur_z = v['z-position']
         if abs(cur_z - prev_z) > 2.5:
-            group = df2.iloc[last_idx:i+1]
+            group = df_rois.loc[last_idx:i+1]
             groups[i] = group
             last_idx = i+1
         prev_z = cur_z
-    group = df2.iloc[last_idx-1:len(df2)+1]
+    group = df_rois.loc[last_idx-1:df_rois.index[-1]+1]
     groups[i] = group
 
     df_largest = max(groups.values(), key=lambda x: len(x))
-    start = int(len(df_largest)/2) - 2
-    stop = int(len(df_largest)/2) + 2
-    return df_largest.iloc[start:stop]
+    mid_slice_idx = df_largest.index[int(len(df_largest)/2)-1]
+    return df_all.iloc[mid_slice_idx-4:mid_slice_idx+4+1]
 
 
 def visualize_contours(raw_path, patient_df):
@@ -218,15 +220,19 @@ def get_mask(img, rois):
     # empty mask
     mask = np.zeros(img.shape[0]*img.shape[1])
 
-    # iteratively add roi regions to mask
-    for roi in rois:
+    try: 
+        # iteratively add roi regions to mask
+        for roi in rois:
+            # from roi to a matplotlib path
+            path = Path(roi)
+            xmin, ymin, xmax, ymax = np.asarray(path.get_extents(), dtype=int).ravel()
 
-        # from roi to a matplotlib path
-        path = Path(roi)
-        xmin, ymin, xmax, ymax = np.asarray(path.get_extents(), dtype=int).ravel()
+            # add points to mask included in the path
+            mask = np.logical_or(mask, np.array(path.contains_points(points)))
 
-        # add points to mask included in the path
-        mask = np.logical_or(mask, np.array(path.contains_points(points)))
+    # except if image is w/o ROIs (empty mask)
+    except TypeError:
+        pass
 
     # reshape mask
     mask = np.array([float(m) for m in mask])

@@ -120,34 +120,21 @@ def _prepare(patient_id, raw_path, prepped_path):
     image = np.array([im_norm(im) for im in image])
     mask = np.array([im_norm(msk) for msk in mask])
 
-    # require depth of 4
-    if image.shape[0] < 4:
-        return
 
     # save prepared image and mask in properly constructed directory
     while True:
         try:
             idx = len(os.listdir(f"{prepped_path}/image1/"))
-            imsave(f"{prepped_path}/image1/{idx}.png", image[0])
-            imsave(f"{prepped_path}/image2/{idx}.png", image[1])
-            imsave(f"{prepped_path}/image3/{idx}.png", image[2])
-            imsave(f"{prepped_path}/image4/{idx}.png", image[3])
-            imsave(f"{prepped_path}/label1/{idx}.png", mask[0])
-            imsave(f"{prepped_path}/label2/{idx}.png", mask[1])
-            imsave(f"{prepped_path}/label3/{idx}.png", mask[2])
-            imsave(f"{prepped_path}/label4/{idx}.png", mask[3])
+            for i in range(8):
+                imsave(f"{prepped_path}/image{i}/{idx}.png", image[i])
+                imsave(f"{prepped_path}/label{i}/{idx}.png", mask[i])
 
         except FileNotFoundError:
             if not os.path.isdir(prepped_path):
                 os.mkdir(prepped_path)
-            os.mkdir(f"{prepped_path}/image1")
-            os.mkdir(f"{prepped_path}/image2")
-            os.mkdir(f"{prepped_path}/image3")
-            os.mkdir(f"{prepped_path}/image4")
-            os.mkdir(f"{prepped_path}/label1")
-            os.mkdir(f"{prepped_path}/label2")
-            os.mkdir(f"{prepped_path}/label3")
-            os.mkdir(f"{prepped_path}/label4")
+            for i in range(8):
+                os.mkdir(f"{prepped_path}/image{i}")
+                os.mkdir(f"{prepped_path}/label{i}")
             continue
         break
 
@@ -162,79 +149,34 @@ def test_train_split(datapath, trainpath, testpath):
     """
 
     os.mkdir(trainpath)
-    os.mkdir(f"{trainpath}/image1")
-    os.mkdir(f"{trainpath}/image2")
-    os.mkdir(f"{trainpath}/image3")
-    os.mkdir(f"{trainpath}/image4")
-    os.mkdir(f"{trainpath}/label1")
-    os.mkdir(f"{trainpath}/label2")
-    os.mkdir(f"{trainpath}/label3")
-    os.mkdir(f"{trainpath}/label4")
     os.mkdir(testpath)
-    os.mkdir(f"{testpath}/image1")
-    os.mkdir(f"{testpath}/image2")
-    os.mkdir(f"{testpath}/image3")
-    os.mkdir(f"{testpath}/image4")
-    os.mkdir(f"{testpath}/label1")
-    os.mkdir(f"{testpath}/label2")
-    os.mkdir(f"{testpath}/label3")
-    os.mkdir(f"{testpath}/label4")
+    for i in range(8):
+        os.mkdir(f"{trainpath}/image{i}")
+        os.mkdir(f"{trainpath}/label{i}")
+        os.mkdir(f"{testpath}/image{i}")
+        os.mkdir(f"{testpath}/label{i}")
 
-    idxs = range(len(os.listdir(f"{datapath}/image1/")))
+    idxs = range(len(os.listdir(f"{datapath}/image0/")))
     train_idxs, test_idxs = train_test_split(idxs, test_size=.2)
     for i, idx in enumerate(train_idxs):
-        im_source_1 = f"{datapath}/image1/{idx}.png"
-        im_source_2 = f"{datapath}/image2/{idx}.png"
-        im_source_3 = f"{datapath}/image3/{idx}.png"
-        im_source_4 = f"{datapath}/image4/{idx}.png"
-        im_dest_1 = f"{trainpath}/image1/{i}.png"
-        im_dest_2 = f"{trainpath}/image2/{i}.png"
-        im_dest_3 = f"{trainpath}/image3/{i}.png"
-        im_dest_4 = f"{trainpath}/image4/{i}.png"
-        shutil.copyfile(im_source_1, im_dest_1)
-        shutil.copyfile(im_source_2, im_dest_2)
-        shutil.copyfile(im_source_3, im_dest_3)
-        shutil.copyfile(im_source_4, im_dest_4)
+        for j in range(8):
+            im_source = f"{datapath}/image{j}/{idx}.png"
+            im_dest = f"{trainpath}/image{j}/{i}.png"
+            shutil.copyfile(im_source, im_dest)
 
-        msk_source_1 = f"{datapath}/label1/{idx}.png"
-        msk_source_2 = f"{datapath}/label2/{idx}.png"
-        msk_source_3 = f"{datapath}/label3/{idx}.png"
-        msk_source_4 = f"{datapath}/label4/{idx}.png"
-        msk_dest_1 = f"{trainpath}/label1/{i}.png"
-        msk_dest_2 = f"{trainpath}/label2/{i}.png"
-        msk_dest_3 = f"{trainpath}/label3/{i}.png"
-        msk_dest_4 = f"{trainpath}/label4/{i}.png"
-        shutil.copy(msk_source_1, msk_dest_1)
-        shutil.copy(msk_source_2, msk_dest_2)
-        shutil.copy(msk_source_3, msk_dest_3)
-        shutil.copy(msk_source_4, msk_dest_4)
+            msk_source = f"{datapath}/label{j}/{idx}.png"
+            msk_dest = f"{trainpath}/label{j}/{i}.png"
+            shutil.copy(msk_source, msk_dest)
 
     for i, idx in enumerate(test_idxs):
-        im_source_1 = f"{datapath}/image1/{idx}.png"
-        im_source_2 = f"{datapath}/image2/{idx}.png"
-        im_source_3 = f"{datapath}/image3/{idx}.png"
-        im_source_4 = f"{datapath}/image4/{idx}.png"
-        im_dest_1 = f"{testpath}/image1/{i}.png"
-        im_dest_2 = f"{testpath}/image2/{i}.png"
-        im_dest_3 = f"{testpath}/image3/{i}.png"
-        im_dest_4 = f"{testpath}/image4/{i}.png"
-        shutil.copyfile(im_source_1, im_dest_1)
-        shutil.copyfile(im_source_2, im_dest_2)
-        shutil.copyfile(im_source_3, im_dest_3)
-        shutil.copyfile(im_source_4, im_dest_4)
+        for j in range(8):
+            im_source = f"{datapath}/image{j}/{idx}.png"
+            im_dest = f"{testpath}/image{j}/{i}.png"
+            shutil.copyfile(im_source, im_dest)
 
-        msk_source_1 = f"{datapath}/label1/{idx}.png"
-        msk_source_2 = f"{datapath}/label2/{idx}.png"
-        msk_source_3 = f"{datapath}/label3/{idx}.png"
-        msk_source_4 = f"{datapath}/label4/{idx}.png"
-        msk_dest_1 = f"{testpath}/label1/{i}.png"
-        msk_dest_2 = f"{testpath}/label2/{i}.png"
-        msk_dest_3 = f"{testpath}/label3/{i}.png"
-        msk_dest_4 = f"{testpath}/label4/{i}.png"
-        shutil.copy(msk_source_1, msk_dest_1)
-        shutil.copy(msk_source_2, msk_dest_2)
-        shutil.copy(msk_source_3, msk_dest_3)
-        shutil.copy(msk_source_4, msk_dest_4)
+            msk_source = f"{datapath}/label{j}/{idx}.png"
+            msk_dest = f"{testpath}/label{j}/{i}.png"
+            shutil.copy(msk_source, msk_dest)
 
 
 def download_and_extract(
