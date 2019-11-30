@@ -1,4 +1,5 @@
 import os
+import pickle
 import shutil
 import sys
 
@@ -10,7 +11,13 @@ import numpy as np
 from skimage.io import imsave
 from sklearn.model_selection import train_test_split
 
-import lidc_helpers
+from lidc_helpers import (
+    find_ct_path,
+    get_mask,
+    get_patient_df,
+    get_series_uid
+)
+
 
 """
 Data Downloader:
@@ -88,14 +95,19 @@ def _prepare(patient_id, raw_path, prepped_path):
     :return: None
     """
 
+    # check if patient in LUMA
+    uids = pickle.load(open( "uids.pkl", "rb" ))
+    if get_series_uid(find_ct_path(raw_path, patient_id)) not in uids:
+        return
+
     # get image and contours for patient images, keep LARGEST countor only
-    pid_df = lidc_helpers.get_patient_df(raw_path, patient_id)
+    pid_df = get_patient_df(raw_path, patient_id)
     largest_pair = [None, None]
     largest_size = 0
     for row in pid_df.iterrows():
         path, rois = row[1].path, row[1].ROIs
         img = pydicom.dcmread(path).pixel_array
-        mask = lidc_helpers.get_mask(img, rois)
+        mask = get_mask(img, rois)
         size = sum([sum(row) for row in mask])
         if size > largest_size:
             largest_pair = [img, mask]
@@ -205,7 +217,7 @@ def download_and_extract(
     if delete_raw:
         shutil.rmtree(raw_path)
 
-    print(f"Complete.")
+    print(f"\nComplete.")
 
 
 if __name__ == "__main__":

@@ -50,6 +50,22 @@ def find_ct_path(raw_path, patient_id):
         return imdir2
 
 
+def get_series_uid(dirname):
+    """
+    Given the path to the directory with the CT files for a patient,
+    returns the series uid for the patient
+
+    :param dirname: absolute path to the folder containing CT images
+    for a given patient
+    return: series uid
+    """
+    rootfile = [f for f in os.listdir(dirname) if f.endswith(".xml")][0]
+    root = ET.parse(os.path.join(dirname, rootfile))
+    header = root.find('{http://www.nih.gov}ResponseHeader')
+    series_uid = header.find('{http://www.nih.gov}SeriesInstanceUid')
+    return series_uid.text
+
+
 def get_uids_df(dirname):
     """
     Given the path to the directory with the CT files for a patient,
@@ -100,15 +116,25 @@ def get_rois_df(dirname):
                 inclusion = roi.find('{http://www.nih.gov}inclusion').text
                 edgeMaps = roi.findall('{http://www.nih.gov}edgeMap')
                 if inclusion:
-                    for point in edgeMaps:
-                        x = point.find('{http://www.nih.gov}xCoord').text
-                        y = point.find('{http://www.nih.gov}yCoord').text
-                        region.append((int(x),int(y)))
-                if uid in ROIs:
-                    ROIs[uid][0].append(region)
-                else:
-                    ROIs[uid] = [[region]]
+                    # exlude > 3mm nodules
+                    if len(edgeMaps) > 1:
+                        for point in edgeMaps:
+                            x = point.find('{http://www.nih.gov}xCoord').text
+                            y = point.find('{http://www.nih.gov}yCoord').text
+                            region.append((int(x),int(y)))
+                        if uid in ROIs:
+                            ROIs[uid][0].append(region)
+                        else:
+                            ROIs[uid] = [[region]]
 
+    # remove contours with less than 3 radiologist markings
+    to_delete = []
+    for uid, roi in ROIs.items():
+        if len(roi[0]) < 3:
+            to_delete.append(uid)
+
+    for td in to_delete:
+        del ROIs[td]
     df = pd.DataFrame.from_dict(
         ROIs,
         orient='index',

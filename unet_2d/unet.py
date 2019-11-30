@@ -1,7 +1,17 @@
 import numpy as np
 import os
 from tensorflow.keras.models import *
-from tensorflow.keras.layers import *
+from tensorflow.keras.layers import (
+    Activation,
+    concatenate,
+    Conv2D,
+    Conv2DTranspose,
+    Dropout,
+    Input,
+    MaxPooling2D,
+    ReLU,
+    UpSampling2D
+)
 from tensorflow.keras.optimizers import *
 from tensorflow.keras.callbacks import ModelCheckpoint, LearningRateScheduler
 
