@@ -1,4 +1,5 @@
 import os
+import pickle
 import shutil
 import sys
 
@@ -7,10 +8,17 @@ import cv2 as cv
 import pydicom
 import numpy as np
 
+from scipy import ndimage, misc
 from skimage.io import imsave
 from sklearn.model_selection import train_test_split
+from skimage.transform import rescale
 
-import lidc_helpers
+from lidc_helpers import (
+    find_ct_path,
+    get_mask,
+    get_patient_df_v2,
+    get_series_uid
+)
 
 """
 Data Downloader:
@@ -110,29 +118,35 @@ def _prepare(patient_id, raw_path, prepped_path):
     :return: None
     """
 
-    # get image and contours for patient images, keep LARGEST countor only
-    pid_df = lidc_helpers.get_patient_df_v2(raw_path, patient_id)
+    # check if patient in LUMA
+    uids = pickle.load(open( "uids.pkl", "rb" ))
+    if get_series_uid(find_ct_path(raw_path, patient_id)) not in uids:
+        return 
+
+    # get image and contours for patient images
+    pid_df = get_patient_df_v2(raw_path, patient_id)
+    if type(pid_df) == type(None):
+        return 
 
     image = [pydicom.dcmread(row[1].path).pixel_array for row in pid_df.iterrows()]
     rois = [row[1].ROIs for row in pid_df.iterrows()]
-    mask = [lidc_helpers.get_mask(im, roi) for im, roi in zip(image, rois)]
+    mask = [get_mask(im, roi) for im, roi in zip(image, rois)]
 
     image = np.array([im_norm(im) for im in image])
     mask = np.array([im_norm(msk) for msk in mask])
-
 
     # save prepared image and mask in properly constructed directory
     while True:
         try:
             idx = len(os.listdir(f"{prepped_path}/image1/"))
-            for i in range(8):
+            for i in range(4):
                 imsave(f"{prepped_path}/image{i}/{idx}.png", image[i])
                 imsave(f"{prepped_path}/label{i}/{idx}.png", mask[i])
 
         except FileNotFoundError:
             if not os.path.isdir(prepped_path):
                 os.mkdir(prepped_path)
-            for i in range(8):
+            for i in range(4):
                 os.mkdir(f"{prepped_path}/image{i}")
                 os.mkdir(f"{prepped_path}/label{i}")
             continue
@@ -150,7 +164,7 @@ def test_train_split(datapath, trainpath, testpath):
 
     os.mkdir(trainpath)
     os.mkdir(testpath)
-    for i in range(8):
+    for i in range(4):
         os.mkdir(f"{trainpath}/image{i}")
         os.mkdir(f"{trainpath}/label{i}")
         os.mkdir(f"{testpath}/image{i}")
@@ -159,7 +173,7 @@ def test_train_split(datapath, trainpath, testpath):
     idxs = range(len(os.listdir(f"{datapath}/image0/")))
     train_idxs, test_idxs = train_test_split(idxs, test_size=.2)
     for i, idx in enumerate(train_idxs):
-        for j in range(8):
+        for j in range(4):
             im_source = f"{datapath}/image{j}/{idx}.png"
             im_dest = f"{trainpath}/image{j}/{i}.png"
             shutil.copyfile(im_source, im_dest)
@@ -169,7 +183,7 @@ def test_train_split(datapath, trainpath, testpath):
             shutil.copy(msk_source, msk_dest)
 
     for i, idx in enumerate(test_idxs):
-        for j in range(8):
+        for j in range(4):
             im_source = f"{datapath}/image{j}/{idx}.png"
             im_dest = f"{testpath}/image{j}/{i}.png"
             shutil.copyfile(im_source, im_dest)

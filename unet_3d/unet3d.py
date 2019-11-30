@@ -20,7 +20,7 @@ https://github.com/a-martyn/unet/blob/master/model/data_loader.py
 
 def encoder_block(x, filters, kernel_size, downsample=False):
     conv_kwargs = dict(
-        activation='relu',
+        activation=LeakyReLU(alpha=0.3),
         padding='same',
         kernel_initializer='he_normal',
         data_format='channels_last'  # (batch, height, width, channels)
@@ -69,7 +69,7 @@ def decoder_block(inputs, filters, kernel_size, transpose=True):
 # INTENDED API
 # ----------------------------------------------------------------------------
 
-def unet(input_size=(256, 256, 8, 1), output_channels=1, transpose=True):
+def unet3d(input_size=(256, 256, 4, 1), output_channels=1, transpose=True):
     """
     U-net implementation adapted translated from authors original
     source code available here: 

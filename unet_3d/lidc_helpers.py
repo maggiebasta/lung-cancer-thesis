@@ -80,6 +80,21 @@ def get_uids_df(dirname):
     df.index.name = 'UID'
     return df
 
+def get_series_uid(dirname):
+    """
+    Given the path to the directory with the CT files for a patient,
+    returns the series uid for the patient
+
+    :param dirname: absolute path to the folder containing CT images
+    for a given patient
+    return: series uid
+    """
+    rootfile = [f for f in os.listdir(dirname) if f.endswith(".xml")][0]
+    root = ET.parse(os.path.join(dirname, rootfile))
+    header = root.find('{http://www.nih.gov}ResponseHeader')
+    series_uid = header.find('{http://www.nih.gov}SeriesInstanceUid')
+    return series_uid.text
+
 
 def get_rois_df(dirname):
     """
@@ -102,14 +117,25 @@ def get_rois_df(dirname):
                 inclusion = roi.find('{http://www.nih.gov}inclusion').text
                 edgeMaps = roi.findall('{http://www.nih.gov}edgeMap')
                 if inclusion:
-                    for point in edgeMaps:
-                        x = point.find('{http://www.nih.gov}xCoord').text
-                        y = point.find('{http://www.nih.gov}yCoord').text
-                        region.append((int(x),int(y)))
-                if uid in ROIs:
-                    ROIs[uid][0].append(region)
-                else:
-                    ROIs[uid] = [[region]]
+                    # exlude > 3mm nodules
+                    if len(edgeMaps) > 1:
+                        for point in edgeMaps:
+                            x = point.find('{http://www.nih.gov}xCoord').text
+                            y = point.find('{http://www.nih.gov}yCoord').text
+                            region.append((int(x),int(y)))
+                        if uid in ROIs:
+                            ROIs[uid][0].append(region)
+                        else:
+                            ROIs[uid] = [[region]]
+    
+    # remove contours with less than 3 radiologist markings
+    to_delete = []
+    for uid, roi in ROIs.items():
+        if len(roi[0]) < 3:
+            to_delete.append(uid)
+    
+    for td in to_delete:
+        del ROIs[td]
 
     df = pd.DataFrame.from_dict(
         ROIs,
@@ -154,12 +180,15 @@ def get_patient_df_v2(raw_path, patient_id):
     df_all = df_all.reset_index()
     df_rois = df_all.dropna()
 
+    if not len(df_rois): 
+        return None
+    thickness =  abs(list(df_all['z-position'])[0] - list(df_all['z-position'])[1])
     groups = {}
     prev_z = float('inf')
     last_idx = 0
     for i, v in df_rois.iterrows():
         cur_z = v['z-position']
-        if abs(cur_z - prev_z) > 2.5:
+        if abs(cur_z - prev_z) > thickness:
             group = df_rois.loc[last_idx:i+1]
             groups[i] = group
             last_idx = i+1
@@ -168,9 +197,12 @@ def get_patient_df_v2(raw_path, patient_id):
     groups[i] = group
 
     df_largest = max(groups.values(), key=lambda x: len(x))
-    mid_slice_idx = df_largest.index[int(len(df_largest)/2)-1]
-    return df_all.iloc[mid_slice_idx-4:mid_slice_idx+4+1]
+    start = max(0, df_largest.index[int(len(df_largest)/2)] - 2)
+    stop = start + 4
+    return df_all.iloc[start:stop]
 
+    # return none if only 1 slice in contoured series
+    return None
 
 def visualize_contours(raw_path, patient_df):
     """
