@@ -1,0 +1,4 @@
+data/
+explore/raw_data/*
+*checkpoint.ipynb
+*.pyc
