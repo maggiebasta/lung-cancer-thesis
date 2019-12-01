@@ -14,7 +14,7 @@ import sys
 
 
 # Load Data
-pickle_file = 'data.pkl'
+pickle_file = 'data/genki_data.pkl'
 with open(pickle_file, "rb") as input_file:
     data = pickle.load(input_file)
 
