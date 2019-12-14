@@ -24,7 +24,7 @@ image_generator_train = ImageDataGenerator(
     shear_range=0.05,
     horizontal_flip=True,
     fill_mode='reflect',
-    data_format='channels_last',
+    # data_format='channels_last',
     validation_split=0.0
 )
 label_generator_train = ImageDataGenerator(
@@ -34,21 +34,21 @@ label_generator_train = ImageDataGenerator(
     shear_range=0.05,
     horizontal_flip=True,
     fill_mode='reflect',
-    data_format='channels_last',
+    # data_format='channels_last',
     validation_split=0.0
 )
 
 image_generator_test = ImageDataGenerator(
     rescale=1./255,
     fill_mode='reflect',
-    data_format='channels_last',
+    # data_format='channels_last',
     validation_split=0.0
 )
 
 label_generator_test = ImageDataGenerator(
     # No rescale transform on target mask
     fill_mode='reflect',
-    data_format='channels_last',
+    # data_format='channels_last',
     validation_split=0.0
 )
 
@@ -150,6 +150,8 @@ def generator(directory, input_gen, target_gen, batch_sz=2, img_sz=(256, 256)):
     for (x0, x1, x2, x3, y0, y1, y2, y3) in generator:
         X = np.array([x0, x1, x2, x3]).reshape(batch_sz, 256, 256, 4, 1)
         Y = np.array([y0, y1, y2, y3]).reshape(batch_sz, 256, 256, 4, 1)
+        # X = np.array([x0, x1, x2, x3]).reshape(batch_sz, 4, 256, 256, 1)
+        # Y = np.array([y0, y1, y2, y3]).reshape(batch_sz, 4, 256, 256, 1)
         yield (X, Y)
 
 # Data visualization
