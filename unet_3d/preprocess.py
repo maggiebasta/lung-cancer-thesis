@@ -135,7 +135,7 @@ def test_train_split(datapath, trainpath, testpath):
         os.mkdir(f"{testpath}/image{i}")
         os.mkdir(f"{testpath}/label{i}")
 
-    idxs = os.listdir(f"{datapath}/image0/")
+    idxs = os.listdir(f"{datapath}/image3/")
     train_idxs, test_idxs = train_test_split(idxs, test_size=.2)
     for i, idx in enumerate(train_idxs):
         for j in range(4):
