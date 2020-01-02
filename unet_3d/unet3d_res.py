@@ -1,5 +1,9 @@
+import tensorflow as tf
+from keras import backend as K
 from tensorflow.keras.models import *
-from tensorflow.keras.layers import Input, Conv3D, UpSampling3D, BatchNormalization, Activation, add, concatenate
+from tensorflow.keras.layers import (
+    Input, Conv3D, UpSampling3D, BatchNormalization, Activation, add, concatenate, Lambda, multiply
+)
 
 """
 https://github.com/DuFanXin/deep_residual_unet/blob/master/res_unet.py
@@ -72,5 +76,8 @@ def unet3d_res(input_shape=(256, 256, 4, 1)):
     path = decoder(path, from_encoder=to_decoder)
 
     path = Conv3D(filters=1, kernel_size=(1, 1, 1), activation='sigmoid')(path)
+    # effecitively "apply lung field mask"
+    inputs2 = Lambda(lambda x: tf.math.ceil(K.clip(x, 0, 1)))(inputs)
+    path = multiply([path, inputs2])
 
     return Model(inputs=[inputs], outputs=[path])
