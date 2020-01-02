@@ -18,7 +18,7 @@ https://github.com/a-martyn/unet/blob/master/model/data_loader.py
 # Instantiated joined image and mask generators for model input
 # ----------------------------------------------------------------------------
 
-def generator(directory, input_gen, target_gen, batch_sz=2, img_sz=(256, 256)):
+def train_generator(directory, input_gen, target_gen, batch_sz=2, img_sz=(256, 256)):
 
     input_subdir = 'image'
     label_subdir = 'label'
@@ -32,7 +32,8 @@ def generator(directory, input_gen, target_gen, batch_sz=2, img_sz=(256, 256)):
         class_mode=None,
         batch_size=batch_sz,
         seed=1,
-        interpolation='nearest'
+        interpolation='nearest', 
+        subset='training'
     )
 
     # Target generator
@@ -44,7 +45,44 @@ def generator(directory, input_gen, target_gen, batch_sz=2, img_sz=(256, 256)):
         class_mode=None,
         batch_size=batch_sz,
         seed=1,
-        interpolation='nearest'
+        interpolation='nearest',
+        subset='training'
+    )
+
+    generator = zip(x_gen, y_gen)
+    for (x, y) in generator:
+        yield (x, y)
+
+
+def val_generator(directory, input_gen, target_gen, batch_sz=2, img_sz=(256, 256)):
+
+    input_subdir = 'image'
+    label_subdir = 'label'
+
+    # Input generator
+    x_gen = input_gen.flow_from_directory(
+        directory,
+        target_size=img_sz,
+        color_mode="grayscale",
+        classes=[input_subdir],
+        class_mode=None,
+        batch_size=batch_sz,
+        seed=1,
+        interpolation='nearest',
+        subset='validation'
+    )
+
+    # Target generator
+    y_gen = input_gen.flow_from_directory(
+        directory,
+        target_size=img_sz,
+        color_mode="grayscale",
+        classes=[label_subdir],
+        class_mode=None,
+        batch_size=batch_sz,
+        seed=1,
+        interpolation='nearest',
+        subset='validation'
     )
 
     generator = zip(x_gen, y_gen)
@@ -65,7 +103,7 @@ def show_augmentation(img_filepath, imageDataGenerator, n_rows=1):
     i = 1
     for batch in imageDataGenerator.flow(x, batch_size=1, seed=1):
         ax = fig.add_subplot(n_rows, n_cols, i)
-        ax.imshow(batch[0])
+        ax.imshow(batch[0], cmap='bone')
         ax.axis('off')
         i += 1
         if i > n_rows*n_cols:
@@ -81,9 +119,9 @@ def show_sample(generator):
 
     size = (5, 5)
     plt.figure(figsize=size)
-    plt.imshow(x[:, :, 0], cmap='gray')
+    plt.imshow(x[:, :, 0], cmap='bone')
     plt.show()
     plt.figure(figsize=size)
-    plt.imshow(y[:, :, 0], cmap='gray')
+    plt.imshow(y[:, :, 0], cmap='bone')
     plt.show()
     return
