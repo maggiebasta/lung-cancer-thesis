@@ -3,3 +3,5 @@
 *.pyc
 *models
 *GENKI*
+*.hdf5
+*.pkl
