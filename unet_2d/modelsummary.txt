@@ -1,1 +1,0 @@
-<bound method Network.summary of <tensorflow.python.keras.engine.training.Model object at 0x7f5430a900f0>>

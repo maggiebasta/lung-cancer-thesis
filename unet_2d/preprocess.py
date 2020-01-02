@@ -3,8 +3,9 @@ import pickle
 import shutil
 import sys
 
-
+import numpy as np
 import pydicom
+from PIL import Image, ImageEnhance
 from skimage.io import imsave, imread
 from sklearn.model_selection import train_test_split
 
@@ -18,6 +19,64 @@ from lidc_helpers import (
 sys.path.append("../")
 import preprocess_helpers
 
+
+# def extract(raw_path, prepped_path, extract_all=True, start=None, end=None):
+#     """
+#     Given path to raw data and an output path, extracts desired slices from
+#     sraw LIDC-IDRI images and saves them
+
+#     :param raw_path: path to raw data to prepare
+#     :param prepped_path: path to directory to save prepared data
+#     :param extract_all: whether or not to extract from all raw data image sets
+#     :param start: if extract_all is false, which image set to start extraction
+#     :param end: if extract_all is false, which image set to end extraction
+#     :return: None
+#     """
+
+#     # save prepared image and mask in properly constructed directory
+#     try:
+#         os.mkdir(prepped_path)
+#         os.mkdir(f"{prepped_path}/image")
+#         os.mkdir(f"{prepped_path}/label")
+#     except FileExistsError:
+#         sys.stdout.write("Warning: prepared folder already exists")
+
+#     if extract_all:
+#         start = 1
+#         end = len(os.listdir(f"{raw_path}/LIDC-IDRI/"))
+#     elif start is None or end is None:
+#         raise ValueError("must specify start and end if extract_all is false")
+
+#     id_nums = [
+#         '0'*(4-len(n))+n for n in [str(i) for i in range(start, end+1)]
+#     ]
+#     ids = [f"LIDC-IDRI/LIDC-IDRI-{id_num}" for id_num in id_nums]
+
+#     for i, patient_id in enumerate(ids):
+#         sys.stdout.write(
+#             f"\rExtracting: {i+1}/{end+1-start}, "
+#             f"Total images extracted: "
+#             f"{len(os.listdir(f'{prepped_path}/image/'))}"
+#         )
+#         sys.stdout.flush()
+#         # check if patient in LUMA
+#         uids = pickle.load(open("uids.pkl", "rb"))
+#         if not os.path.exists(raw_path + patient_id):
+#             continue
+#         if get_series_uid(find_ct_path(raw_path, patient_id)) not in uids:
+#             continue
+
+#         # get image and contours for patient images
+#         pid_df = get_patient_df(raw_path, patient_id)
+#         for row in pid_df.iterrows():
+#             path, rois = row[1].path, row[1].ROIs
+#             img = pydicom.dcmread(path).pixel_array
+#             mask = get_mask(img, rois)
+#             idx = len(os.listdir(f"{prepped_path}/image/"))
+#             imsave(f"{prepped_path}/image/{idx}.tif", img)
+#             imsave(f"{prepped_path}/label/{idx}.tif", mask)
+
+#     print(f"\nComplete.")
 
 def extract(raw_path, prepped_path, extract_all=True, start=None, end=None):
     """
@@ -96,18 +155,22 @@ def preprocess(datapath, processedpath):
         sys.stdout.write(f"\rProcessing...{i+1}/{n}")
         sys.stdout.flush()
         img = imread(f"{datapath}/image/{idx}.tif")
-        mask = preprocess_helpers.resize(
+        lung_mask = preprocess_helpers.resize(
             preprocess_helpers.get_lung_mask(img).astype('float')
         )
-        if mask.sum() == 0:
+        if lung_mask.sum() == 0:
             sys.stdout.write(
                 f"\rEmpty lung field returned for image {idx}. Skipping\n"
             )
             continue
         img = preprocess_helpers.normalize(img)
         img = preprocess_helpers.resize(img)
-        img = img*mask
-        imsave(f"{processedpath}/image/{idx}.tif", img)
+        img = img*lung_mask
+        pil_im = Image.fromarray(img)
+        enhancer = ImageEnhance.Contrast(pil_im)
+        enhanced_im = enhancer.enhance(2.0)
+        np_im = np.array(enhanced_im)
+        imsave(f"{processedpath}/image/{idx}.tif", np_im)
 
         mask = imread(f"{datapath}/label/{idx}.tif")
         mask = preprocess_helpers.resize(mask)

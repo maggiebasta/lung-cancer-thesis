@@ -3,7 +3,9 @@ import pickle
 import shutil
 import sys
 
+import numpy as np
 import pydicom
+from PIL import Image, ImageEnhance
 from skimage.io import imsave, imread
 from sklearn.model_selection import train_test_split
 
@@ -97,7 +99,10 @@ def preprocess(datapath, processedpath):
     for i, idx in enumerate(idxs):
         sys.stdout.write(f"\rProcessing...{i+1}/{n}")
         sys.stdout.flush()
+        empty_found = False
         for j in range(4):
+            if empty_found:
+                continue
             img = imread(f"{datapath}/image{j}/{idx}.tif")
             mask = preprocess_helpers.resize(
                 preprocess_helpers.get_lung_mask(img).astype('float')
@@ -106,11 +111,19 @@ def preprocess(datapath, processedpath):
                 sys.stdout.write(
                     f"\rEmpty lung field returned for image {idx}. Skipping\n"
                 )
+                empty_found = True
+                # delete previous scans for pid
+                for k in range(j):
+                    os.remove(f"{processedpath}/image{k}/{idx}.tif")
                 continue
             img = preprocess_helpers.normalize(img)
             img = preprocess_helpers.resize(img)
             img = img*mask
-            imsave(f"{processedpath}/image{j}/{idx}.tif", img)
+            pil_im = Image.fromarray(img)
+            enhancer = ImageEnhance.Contrast(pil_im)
+            enhanced_im = enhancer.enhance(2.0)
+            np_im = np.array(enhanced_im)
+            imsave(f"{processedpath}/image{j}/{idx}.tif", np_im)
 
             mask = imread(f"{datapath}/label{j}/{idx}.tif")
             mask = preprocess_helpers.resize(mask)
