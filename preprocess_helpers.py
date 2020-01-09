@@ -70,13 +70,6 @@ def get_lung_mask(img):
     # fill holes
     mask = np.float32(scipy.ndimage.morphology.binary_fill_holes(mask))
 
-    # # shrink edges with final erosion
-    # eroded_mask = morphology.erosion(mask, np.ones([15, 15]))
-    # if eroded_mask.sum() == 0:
-    #     return mask
-    # return eroded_mask
-
-    # shrink edges with final erosion
     for i in np.arange(2, 24, 2):
         eroded_mask = morphology.erosion(mask, np.ones([24-i, 24-i]))
         if eroded_mask.sum() != 0:

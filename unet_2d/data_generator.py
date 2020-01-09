@@ -18,7 +18,7 @@ https://github.com/a-martyn/unet/blob/master/model/data_loader.py
 # Instantiated joined image and mask generators for model input
 # ----------------------------------------------------------------------------
 
-def train_generator(directory, input_gen, target_gen, batch_sz=2, img_sz=(256, 256)):
+def generator(directory, input_gen, target_gen, batch_sz=2, img_sz=(256, 256)):
 
     input_subdir = 'image'
     label_subdir = 'label'
@@ -47,42 +47,6 @@ def train_generator(directory, input_gen, target_gen, batch_sz=2, img_sz=(256, 2
         seed=1,
         interpolation='nearest',
         subset='training'
-    )
-
-    generator = zip(x_gen, y_gen)
-    for (x, y) in generator:
-        yield (x, y)
-
-
-def val_generator(directory, input_gen, target_gen, batch_sz=2, img_sz=(256, 256)):
-
-    input_subdir = 'image'
-    label_subdir = 'label'
-
-    # Input generator
-    x_gen = input_gen.flow_from_directory(
-        directory,
-        target_size=img_sz,
-        color_mode="grayscale",
-        classes=[input_subdir],
-        class_mode=None,
-        batch_size=batch_sz,
-        seed=1,
-        interpolation='nearest',
-        subset='validation'
-    )
-
-    # Target generator
-    y_gen = input_gen.flow_from_directory(
-        directory,
-        target_size=img_sz,
-        color_mode="grayscale",
-        classes=[label_subdir],
-        class_mode=None,
-        batch_size=batch_sz,
-        seed=1,
-        interpolation='nearest',
-        subset='validation'
     )
 
     generator = zip(x_gen, y_gen)
