@@ -49,6 +49,7 @@ def ttv_split(
     os.mkdir('data/nlst_test/image_roi_2d/1')
     os.mkdir('data/nlst_test/image_roi_2d/0')
     os.mkdir('data/nlst_test/image_roi_3d')
+    os.mkdir('data/nlst_test/image_roi_3d/pkls')
     for i in range(50):
         os.mkdir(f'data/nlst_test/image_roi_3d/{i}')
     os.mkdir('data/nlst_test/image_roi_3d/label')
@@ -103,6 +104,10 @@ def ttv_split(
                 )
                 with open(f'{pid_roi_3d_path}/{im}.pkl', 'rb') as input_file:
                     cube = pkl.load(input_file)
+                pkl.dump(
+                    (cube, label),
+                    open(f'data/nlst_test/image_roi_3d/pkls/{count}.pkl', "wb")
+                )
                 for i, slc in enumerate(cube[:50]):
                     slc = np.array(Image.fromarray(slc))
                     imsave(
