@@ -16,8 +16,9 @@ from lidc_helpers import (
     get_series_uid
 )
 
-sys.path.append("../")
+sys.path.append("../../")
 import preprocess_helpers
+
 
 def extract_train(raw_path, train_extract_path, train_ids):
     """

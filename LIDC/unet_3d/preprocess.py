@@ -1,10 +1,11 @@
 import os
-import pickle
 import shutil
 import sys
 
 import numpy as np
+import pickle as pkl
 import pydicom
+import scipy.ndimage
 from PIL import Image, ImageEnhance
 from skimage.io import imsave, imread
 from sklearn.model_selection import train_test_split
@@ -16,11 +17,26 @@ from lidc_helpers import (
     get_series_uid
 )
 
-sys.path.append("../")
+sys.path.append("../../")
 import preprocess_helpers
 
 
-def extract(raw_path, prepped_path, extract_all=True, start=None, end=None):
+def resample(image, pixel_spacing, thickness, new_spacing=[1, 1, 1]):
+    # Determine current pixel spacing
+    spacing = np.array([thickness, pixel_spacing[0], pixel_spacing[1]])
+
+    resize_factor = spacing / np.array(new_spacing)
+    new_real_shape = image.shape * resize_factor
+    new_shape = np.round(new_real_shape)
+    real_resize_factor = new_shape / image.shape
+    new_spacing = spacing / real_resize_factor
+
+    image = scipy.ndimage.interpolation.zoom(image, real_resize_factor)
+
+    return image
+
+
+def extract(raw_path, prepped_path):
     """
     Given path to raw data and an output path, extracts desired slices from
     sraw LIDC-IDRI images and saves them
@@ -32,12 +48,10 @@ def extract(raw_path, prepped_path, extract_all=True, start=None, end=None):
     :param end: if extract_all is false, which image set to end extraction
     :return: None
     """
+    os.mkdir(prepped_path)
 
-    if extract_all:
-        start = 1
-        end = len(os.listdir(f"{raw_path}/LIDC-IDRI/"))
-    elif start is None or end is None:
-        raise ValueError("must specify start and end if extract_all is false")
+    start = 1
+    end = len(os.listdir(f"{raw_path}/LIDC-IDRI/"))
 
     id_nums = [
         '0'*(4-len(n))+n for n in [str(i) for i in range(start, end+1)]
@@ -52,7 +66,7 @@ def extract(raw_path, prepped_path, extract_all=True, start=None, end=None):
             continue
 
         # check if patient in LUMA
-        uids = pickle.load(open("uids.pkl", "rb"))
+        uids = pkl.load(open("uids.pkl", "rb"))
         if get_series_uid(find_ct_path(raw_path, patient_id)) not in uids:
             continue
 
@@ -61,73 +75,70 @@ def extract(raw_path, prepped_path, extract_all=True, start=None, end=None):
         if isinstance(pid_df, type(None)):
             continue
 
-        image = [
+        image = np.array([
             pydicom.dcmread(r[1].path).pixel_array for r in pid_df.iterrows()
-        ]
+        ])
         rois = [row[1].ROIs for row in pid_df.iterrows()]
-        mask = [get_mask(im, roi) for im, roi in zip(image, rois)]
+        mask = np.array([get_mask(im, roi) for im, roi in zip(image, rois)])
 
-        # save prepared image and mask in properly constructed directory
-        while True:
-            try:
-                idx = len(os.listdir(f"{prepped_path}/image1/"))
-                for i in range(4):
-                    imsave(f"{prepped_path}/image{i}/{idx}.tif", image[i])
-                    imsave(f"{prepped_path}/label{i}/{idx}.tif", mask[i])
+        thickness = pydicom.dcmread(pid_df.iloc[0].path).SliceThickness
+        spacing = pydicom.dcmread(pid_df.iloc[0].path).PixelSpacing[0]
 
-            except FileNotFoundError:
-                if not os.path.isdir(prepped_path):
-                    os.mkdir(prepped_path)
-                for i in range(4):
-                    os.mkdir(f"{prepped_path}/image{i}")
-                    os.mkdir(f"{prepped_path}/label{i}")
-                continue
-            break
+        idx = len(os.listdir(f"{prepped_path}/"))
+        pkl.dump(
+            (image, mask, spacing, thickness),
+            open(f"{prepped_path}/{idx}.pkl", 'wb')
+        )
+
     print(f"\nComplete.")
 
 
 def preprocess(datapath, processedpath):
     os.mkdir(processedpath)
-    os.mkdir(f"{processedpath}/image")
-    os.mkdir(f"{processedpath}/label")
-    for i in range(4):
+    for i in range(8):
         os.mkdir(f"{processedpath}/image{i}")
         os.mkdir(f"{processedpath}/label{i}")
 
-    idxs = range(len(os.listdir(f"{datapath}/image0/")))
+    idxs = os.listdir(f"{datapath}")
     n = len(idxs)
     for i, idx in enumerate(idxs):
         sys.stdout.write(f"\rProcessing...{i+1}/{n}")
         sys.stdout.flush()
         empty_found = False
-        for j in range(4):
+        image, mask, spacing, thickness = pkl.load(
+            open(f'data/extracted/{idx}', 'rb')
+        )
+
+        processed_lungmasks = []
+        processed_image = []
+        processed_mask = []
+
+        for j in range(len(image)):
             if empty_found:
                 continue
-            img = imread(f"{datapath}/image{j}/{idx}.tif")
-            mask = preprocess_helpers.resize(
-                preprocess_helpers.get_lung_mask(img).astype('float')
-            )
-            if mask.sum() == 0:
-                sys.stdout.write(
-                    f"\rEmpty lung field returned for image {idx}. Skipping\n"
-                )
-                empty_found = True
-                # delete previous scans for pid
-                for k in range(j):
-                    os.remove(f"{processedpath}/image{k}/{idx}.tif")
-                continue
-            img = preprocess_helpers.normalize(img)
-            img = preprocess_helpers.resize(img)
-            img = img*mask
-            pil_im = Image.fromarray(img)
+            img = image[j]
+            processed_lungmasks.append(preprocess_helpers.get_lung_mask(img))
+            processed_image.append(img)
+            processed_mask.append(mask[j]*100)
+
+        lung_mask = max(processed_lungmasks, key=lambda x: x.sum())
+        image = resample(np.array(processed_image), (spacing, spacing), thickness)
+        mask = resample(np.array(processed_mask), (spacing, spacing), thickness)
+        mask = np.clip(mask, 0, 1)
+
+        for k in range(8):
+            im = preprocess_helpers.normalize(image[k])
+            im = preprocess_helpers.resize(im)
+            im = im*preprocess_helpers.resize(lung_mask)
+            pil_im = Image.fromarray(im)
             enhancer = ImageEnhance.Contrast(pil_im)
             enhanced_im = enhancer.enhance(2.0)
             np_im = np.array(enhanced_im)
-            imsave(f"{processedpath}/image{j}/{idx}.tif", np_im)
 
-            mask = imread(f"{datapath}/label{j}/{idx}.tif")
-            mask = preprocess_helpers.resize(mask)
-            imsave(f"{processedpath}/label{j}/{idx}.tif", mask)
+            mk = preprocess_helpers.resize(mask[k])
+            imsave(f"{processedpath}/image{k}/{i}.tif", np_im)
+            imsave(f"{processedpath}/label{k}/{i}.tif", mk.astype('int'))
+
     print(f"\nComplete.")
 
 
@@ -142,7 +153,7 @@ def test_train_split(datapath, trainpath, testpath):
 
     os.mkdir(trainpath)
     os.mkdir(testpath)
-    for i in range(4):
+    for i in range(8):
         os.mkdir(f"{trainpath}/image{i}")
         os.mkdir(f"{trainpath}/label{i}")
         os.mkdir(f"{testpath}/image{i}")
@@ -151,7 +162,7 @@ def test_train_split(datapath, trainpath, testpath):
     idxs = os.listdir(f"{datapath}/image3/")
     train_idxs, test_idxs = train_test_split(idxs, test_size=.2)
     for i, idx in enumerate(train_idxs):
-        for j in range(4):
+        for j in range(8):
             im_source = f"{datapath}/image{j}/{idx}"
             im_dest = f"{trainpath}/image{j}/{i}.tif"
             shutil.copyfile(im_source, im_dest)
@@ -161,7 +172,7 @@ def test_train_split(datapath, trainpath, testpath):
             shutil.copy(msk_source, msk_dest)
 
     for i, idx in enumerate(test_idxs):
-        for j in range(4):
+        for j in range(8):
             im_source = f"{datapath}/image{j}/{idx}"
             im_dest = f"{testpath}/image{j}/{i}.tif"
             shutil.copyfile(im_source, im_dest)

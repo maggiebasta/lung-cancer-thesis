@@ -8,7 +8,6 @@ from skimage.io import imsave, imread
 from skimage import measure, morphology
 from sklearn.cluster import KMeans
 
-
 def get_lung_mask(img):
 
     # threshold for haunsfield units
@@ -75,6 +74,7 @@ def get_lung_mask(img):
         if eroded_mask.sum() != 0:
             return eroded_mask
     return mask
+
 
 def normalize(img):
     return cv.normalize(
