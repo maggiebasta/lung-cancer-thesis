@@ -2,10 +2,11 @@ import os
 import sys
 
 import numpy as np
+import pandas as pd
 from PIL import Image, ImageEnhance
 from skimage.io import imread, imsave
 
-sys.path.append("../")
+sys.path.append('../')
 from preprocess_helpers import get_lung_mask, normalize, resize
 
 # Images that need to have lung fields 'partially' manually segmented
@@ -25,11 +26,14 @@ special_imgs_1 = [
     '113814_T0_2.tif', '113814_T0_3.tif', '117950_T1_2.tif',
     '117950_T1_3.tif', '117950_T1_4.tif', '117950_T2_3.tif',
     '119358_T0_1.tif', '119358_T1_2.tif', '119911_T2_1.tif',
-    '205714_T2_2.tif', '210090_T2_5.tif', '214923_T0_3.tif'
+    '205714_T2_2.tif', '210090_T2_5.tif', '214923_T0_3.tif',
+    '112956_T0_1.tif', '121099_T0_1.tif', '207782_T0_2.tif',
+    '207782_T1_2.tif', '207782_T1_5.tif'
 ]
 
 # Images that need to have lung fields 'completely' manually segmented
 special_imgs_2 = [
+    '100954_T0_3.tif', '105340_T0_1.tif', '112506_T2_6.tif',
     '104778_T0_4.tif', '118297_T1_2.tif', '118297_T1_3.tif'
 ]
 
@@ -52,12 +56,12 @@ def preprocess_img(img, special=0, manual_lung_mask=None):
     return np.array(enhanced_im)
 
 
-def preprocess(extracted_path, processed_path):
+def preprocess(extracted_path, processed_path, table_path='data/nlst_table_cleaned.csv'):
     os.mkdir(processed_path)
-    pids = os.listdir(extracted_path)
+    pids = pd.read_csv(table_path).pid.unique()
     n = len(pids)
     for i, pid in enumerate(pids):
-        sys.stdout.write(f"\rProcessing...{i+1}/{n}")
+        sys.stdout.write(f'\rProcessing...{i+1}/{n}')
         sys.stdout.flush()
         os.mkdir(processed_path + '/' + str(pid))
         for im_path in os.listdir(extracted_path + '/' + str(pid)):
@@ -65,17 +69,18 @@ def preprocess(extracted_path, processed_path):
                 os.path.join(extracted_path + '/' + str(pid), im_path))
             if str(pid) + '_' + im_path in special_imgs_1:
                 lung_mask = imread(
-                    f"data/nlst_special_masks/{pid}_{im_path}"
+                    f'data/nlst_special_masks/{pid}_{im_path}'
                 ).astype('float')
                 processed_img = preprocess_img(
                     img, special=1, manual_lung_mask=lung_mask)
             elif str(pid) + '_' + im_path in special_imgs_2:
                 lung_mask = imread(
-                    f"data/nlst_special_masks/{pid}_{im_path}"
+                    f'data/nlst_special_masks/{pid}_{im_path}'
                 ).astype('float')
                 processed_img = preprocess_img(
                     img, special=2, manual_lung_mask=lung_mask)
             else:
                 processed_img = preprocess_img(img)
-            imsave(f"{processed_path}/{pid}/{im_path}", processed_img)
-    print(f"\nComplete.")
+            imsave(f'{processed_path}/{pid}/{im_path}', processed_img)
+    print(f'\nComplete.')
+
