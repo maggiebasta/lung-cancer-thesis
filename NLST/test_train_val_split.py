@@ -27,6 +27,8 @@ def ttv_split(
         test_size=0.2,
         random_state=26
     )
+    val_ids = train_ids[:50]
+    train_ids = train_ids[50:]
 
     os.mkdir('data/nlst_train')
     os.mkdir('data/nlst_train/image_full')
@@ -41,6 +43,18 @@ def ttv_split(
         os.mkdir(f'data/nlst_train/image_roi_3d/{i}')
     os.mkdir('data/nlst_train/image_roi_3d/label')
 
+    os.mkdir('data/nlst_val')
+    os.mkdir('data/nlst_val/image_full')
+    os.mkdir('data/nlst_val/image_full/1')
+    os.mkdir('data/nlst_val/image_full/0')
+    os.mkdir('data/nlst_val/image_roi_2d')
+    os.mkdir('data/nlst_val/image_roi_2d/1')
+    os.mkdir('data/nlst_val/image_roi_2d/0')
+    os.mkdir('data/nlst_val/image_roi_3d')
+    for i in range(50):
+        os.mkdir(f'data/nlst_val/image_roi_3d/{i}')
+    os.mkdir('data/nlst_val/image_roi_3d/label')
+
     os.mkdir('data/nlst_test')
     os.mkdir('data/nlst_test/image_full')
     os.mkdir('data/nlst_test/image_full/1')
@@ -53,6 +67,38 @@ def ttv_split(
     for i in range(50):
         os.mkdir(f'data/nlst_test/image_roi_3d/{i}')
     os.mkdir('data/nlst_test/image_roi_3d/label')
+
+    count = 0
+    for pid in val_ids:
+        pid_full_path = f'{processed_path}/{pid}'
+        pid_roi_2d_path = f'{roi_2d_path}/{pid}'
+        pid_roi_3d_path = f'{roi_3d_path}/{pid}'
+        label = RecurTable[int(pid)]
+        try:
+            for im in [f[:-4] for f in os.listdir(pid_roi_3d_path)]:
+                imsave(
+                    f'data/nlst_val/image_full/{label}/{count}.tif',
+                    imread(f'{pid_full_path}/{im}.tif')
+                )
+                imsave(
+                    f'data/nlst_val/image_roi_2d/{label}/{count}.tif',
+                    imread(f'{pid_roi_2d_path}/{im}.tif')
+                )
+                with open(f'{pid_roi_3d_path}/{im}.pkl', 'rb') as input_file:
+                    cube = pkl.load(input_file)
+                for i, slc in enumerate(cube[:50]):
+                    slc = np.array(Image.fromarray(slc))
+                    imsave(
+                        f'data/nlst_val/image_roi_3d/{i}/{count}.tif',
+                        slc
+                    )
+                imsave(
+                    f'data/nlst_val/image_roi_3d/label/{count}.tif',
+                    np.array(Image.fromarray(np.array([[label]]), 'L'))
+                )
+                count += 1
+        except FileNotFoundError:
+            print(f'No ROIs for {pid}')
 
     count = 0
     for pid in train_ids:
