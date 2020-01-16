@@ -66,7 +66,7 @@ def decoder(x, from_encoder):
     return main_path
 
 
-def unet3d_res(input_shape=(256, 256, 4, 1)):
+def unet3d_res(input_shape=(256, 256, 8, 1)):
     inputs = Input(shape=input_shape)
 
     to_decoder = encoder(inputs)
