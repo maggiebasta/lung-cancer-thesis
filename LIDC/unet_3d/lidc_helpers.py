@@ -161,7 +161,7 @@ def get_patient_df(raw_path, patient_id):
     df2 = get_rois_df(ct_path)
     return df2.join(df1, how='inner').sort_values(by=['z-position'])
 
-    
+
 def get_patient_df_v2(raw_path, patient_id):
     """
     Given a patient ID, returns a "summarizing" dataframe for the contoured
@@ -196,13 +196,15 @@ def get_patient_df_v2(raw_path, patient_id):
     group = df_rois.loc[last_idx-1:df_rois.index[-1]+1]
     groups[i] = group
 
-    df_largest = max(groups.values(), key=lambda x: len(x))
-    start = max(0, df_largest.index[int(len(df_largest)/2)] - 2)
-    stop = start + 4
-    return df_all.iloc[start:stop]
+    ret = []
+    for group in groups.values():
+        df_cur = max(groups.values(), key=lambda x: len(x))
+        num_slices = int(np.ceil(8/thickness))
+        start = max(0, df_cur.index[int(len(df_cur)/2)] - int(num_slices/2))
+        stop = start + num_slices
+        ret.append(df_all.iloc[start:stop])
+    return ret
 
-    # return none if only 1 slice in contoured series
-    return None
 
 def visualize_contours(raw_path, patient_df):
     """

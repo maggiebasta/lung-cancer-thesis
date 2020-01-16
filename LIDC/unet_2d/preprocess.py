@@ -16,7 +16,7 @@ from lidc_helpers import (
     get_series_uid
 )
 
-sys.path.append("../../")
+sys.path.append('../../')
 import preprocess_helpers
 
 
@@ -34,10 +34,10 @@ def extract_train(raw_path, train_extract_path, train_ids):
     # save prepared image and mask in properly constructed directory
     try:
         os.mkdir(train_extract_path)
-        os.mkdir(f"{train_extract_path}/image")
-        os.mkdir(f"{train_extract_path}/label")
+        os.mkdir(f'{train_extract_path}/image')
+        os.mkdir(f'{train_extract_path}/label')
     except FileExistsError:
-        sys.stdout.write("Warning: extracted folder already exists")
+        sys.stdout.write('Warning: extracted folder already exists')
 
     start = 1
     end = len(train_ids)
@@ -45,13 +45,13 @@ def extract_train(raw_path, train_extract_path, train_ids):
         start = 1
 
         sys.stdout.write(
-            f"\rExtracting: {i+1}/{end+1-start}, "
-            f"Total images extracted: "
+            f'\rExtracting: {i+1}/{end+1-start}, '
+            f'Total images extracted: '
             f"{len(os.listdir(f'{train_extract_path}/image/'))}"
         )
         sys.stdout.flush()
         # check if patient in LUMA
-        uids = pickle.load(open("uids.pkl", "rb"))
+        uids = pickle.load(open('uids.pkl', 'rb'))
         if not os.path.exists(raw_path + patient_id):
             continue
         if get_series_uid(find_ct_path(raw_path, patient_id)) not in uids:
@@ -63,11 +63,11 @@ def extract_train(raw_path, train_extract_path, train_ids):
             path, rois = row[1].path, row[1].ROIs
             img = pydicom.dcmread(path).pixel_array
             mask = get_mask(img, rois)
-            idx = len(os.listdir(f"{train_extract_path}/image/"))
-            imsave(f"{train_extract_path}/image/{idx}.tif", img)
-            imsave(f"{train_extract_path}/label/{idx}.tif", mask)
+            idx = len(os.listdir(f'{train_extract_path}/image/'))
+            imsave(f'{train_extract_path}/image/{idx}.tif', img)
+            imsave(f'{train_extract_path}/label/{idx}.tif', mask)
 
-    print(f"\nComplete.")
+    print(f'\nComplete.')
 
 
 def extract_test(raw_path, test_extract_path, test_ids):
@@ -85,22 +85,22 @@ def extract_test(raw_path, test_extract_path, test_ids):
     # save prepared image and mask in properly constructed directory
     try:
         os.mkdir(test_extract_path)
-        os.mkdir(f"{test_extract_path}/image")
-        os.mkdir(f"{test_extract_path}/label")
+        os.mkdir(f'{test_extract_path}/image')
+        os.mkdir(f'{test_extract_path}/label')
     except FileExistsError:
-        sys.stdout.write("Warning: prepared folder already exists")
+        sys.stdout.write('Warning: prepared folder already exists')
 
     start = 1
     end = len(test_ids)
     for i, patient_id in enumerate(test_ids):
         sys.stdout.write(
-            f"\rExtracting: {i+1}/{end+1-start}, "
-            f"Total images extracted: "
+            f'\rExtracting: {i+1}/{end+1-start}, '
+            f'Total images extracted: '
             f"{len(os.listdir(f'{test_extract_path}/image/'))}"
         )
         sys.stdout.flush()
         # check if patient in LUMA
-        uids = pickle.load(open("uids.pkl", "rb"))
+        uids = pickle.load(open('uids.pkl', 'rb'))
         if not os.path.exists(raw_path + patient_id):
             continue
         if get_series_uid(find_ct_path(raw_path, patient_id)) not in uids:
@@ -124,33 +124,33 @@ def extract_test(raw_path, test_extract_path, test_ids):
             continue
         im, msk = largest_pair
 
-        idx = len(os.listdir(f"{test_extract_path}/image/"))
-        imsave(f"{test_extract_path}/image/{idx}.tif", im)
-        imsave(f"{test_extract_path}/label/{idx}.tif", msk)
+        idx = len(os.listdir(f'{test_extract_path}/image/'))
+        imsave(f'{test_extract_path}/image/{idx}.tif', im)
+        imsave(f'{test_extract_path}/label/{idx}.tif', msk)
 
-    print(f"\nComplete.")
+    print(f'\nComplete.')
 
 
 def preprocess_train(datapath, processedpath):
     os.mkdir(processedpath)
-    os.mkdir(f"{processedpath}/image")
-    os.mkdir(f"{processedpath}/label")
+    os.mkdir(f'{processedpath}/image')
+    os.mkdir(f'{processedpath}/label')
 
-    idxs = range(len(os.listdir(f"{datapath}/image/")))
+    idxs = range(len(os.listdir(f'{datapath}/image/')))
     n = len(idxs)
     for i, idx in enumerate(idxs):
-        sys.stdout.write(f"\rProcessing...{i+1}/{n}")
+        sys.stdout.write(f'\rProcessing...{i+1}/{n}')
         sys.stdout.flush()
-        img = imread(f"{datapath}/image/{idx}.tif")
+        img = imread(f'{datapath}/image/{idx}.tif')
 
         lung_mask = preprocess_helpers.get_lung_mask(img).astype('float')
         if str(idx) + '.tif' in os.listdir('data/special_train_masks'):
-            lung_mask += imread(f"data/special_train_masks/{idx}.tif").astype('float')
+            lung_mask += imread(f'data/special_train_masks/{idx}.tif').astype('float')
             lung_mask = np.clip(lung_mask, 0, 1)
         lung_mask = preprocess_helpers.resize(lung_mask)
         if lung_mask.sum() == 0:
             sys.stdout.write(
-                f"\rEmpty lung field returned for image {idx}. Skipping\n"
+                f'\rEmpty lung field returned for image {idx}. Skipping\n'
             )
             continue
         img = preprocess_helpers.normalize(img)
@@ -160,35 +160,35 @@ def preprocess_train(datapath, processedpath):
         enhancer = ImageEnhance.Contrast(pil_im)
         enhanced_im = enhancer.enhance(2.0)
         np_im = np.array(enhanced_im)
-        imsave(f"{processedpath}/image/{idx}.tif", np_im)
+        imsave(f'{processedpath}/image/{idx}.tif', np_im)
 
-        mask = imread(f"{datapath}/label/{idx}.tif")
+        mask = imread(f'{datapath}/label/{idx}.tif')
         mask = preprocess_helpers.resize(mask)
-        imsave(f"{processedpath}/label/{idx}.tif", mask)
-    print(f"\nComplete.")
+        imsave(f'{processedpath}/label/{idx}.tif', mask)
+    print(f'\nComplete.')
 
 
 def preprocess_test(datapath, processedpath):
     os.mkdir(processedpath)
-    os.mkdir(f"{processedpath}/image")
-    os.mkdir(f"{processedpath}/label")
+    os.mkdir(f'{processedpath}/image')
+    os.mkdir(f'{processedpath}/label')
 
-    idxs = range(len(os.listdir(f"{datapath}/image/")))
+    idxs = range(len(os.listdir(f'{datapath}/image/')))
     n = len(idxs)
     for i, idx in enumerate(idxs):
-        sys.stdout.write(f"\rProcessing...{i+1}/{n}")
+        sys.stdout.write(f'\rProcessing...{i+1}/{n}')
         sys.stdout.flush()
-        img = imread(f"{datapath}/image/{idx}.tif")
+        img = imread(f'{datapath}/image/{idx}.tif')
 
         lung_mask = preprocess_helpers.get_lung_mask(img).astype('float')
         if str(idx) + '.tif' in os.listdir('data/special_test_masks'):
-            lung_mask += imread(f"data/special_test_masks/{idx}.tif").astype('float')
+            lung_mask += imread(f'data/special_test_masks/{idx}.tif').astype('float')
             lung_mask = np.clip(lung_mask, 0, 1)
         lung_mask = preprocess_helpers.resize(lung_mask)
 
         if lung_mask.sum() == 0:
             sys.stdout.write(
-                f"\rEmpty lung field returned for image {idx}. Skipping\n"
+                f'\rEmpty lung field returned for image {idx}. Skipping\n'
             )
             continue
         img = preprocess_helpers.normalize(img)
@@ -199,12 +199,12 @@ def preprocess_test(datapath, processedpath):
         enhancer = ImageEnhance.Contrast(pil_im)
         enhanced_im = enhancer.enhance(2.0)
         np_im = np.array(enhanced_im)
-        imsave(f"{processedpath}/image/{idx}.tif", np_im)
+        imsave(f'{processedpath}/image/{idx}.tif', np_im)
 
-        mask = imread(f"{datapath}/label/{idx}.tif")
+        mask = imread(f'{datapath}/label/{idx}.tif')
         mask = preprocess_helpers.resize(mask)
-        imsave(f"{processedpath}/label/{idx}.tif", mask)
-    print(f"\nComplete.")
+        imsave(f'{processedpath}/label/{idx}.tif', mask)
+    print(f'\nComplete.')
 
 
 if __name__ == "__main__":

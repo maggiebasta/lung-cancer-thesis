@@ -15,147 +15,53 @@ and:
 https://github.com/a-martyn/unet/blob/master/model/data_loader.py
 """
 
-# Keras Image Data Generator Templates for train and test images and labels
-# ----------------------------------------------------------------------------
-image_generator_train = ImageDataGenerator(
-    rotation_range=2,
-    brightness_range=[0.8, 1.2],
-    rescale=1./255,
-    shear_range=0.05,
-    horizontal_flip=True,
-    fill_mode='reflect',
-    # data_format='channels_last',
-    validation_split=0.0
-)
-label_generator_train = ImageDataGenerator(
-    rotation_range=2,
-    # No brightness transform on target mask
-    # No rescale transform on target mask
-    shear_range=0.05,
-    horizontal_flip=True,
-    fill_mode='reflect',
-    # data_format='channels_last',
-    validation_split=0.0
-)
-
-image_generator_test = ImageDataGenerator(
-    rescale=1./255,
-    fill_mode='reflect',
-    # data_format='channels_last',
-    validation_split=0.0
-)
-
-label_generator_test = ImageDataGenerator(
-    # No rescale transform on target mask
-    fill_mode='reflect',
-    # data_format='channels_last',
-    validation_split=0.0
-)
-
-
 # Instantiated joined image and mask generators for model input
 # ----------------------------------------------------------------------------
+
 
 def generator(directory, input_gen, target_gen, batch_sz=2, img_sz=(256, 256)):
 
     # Input generators
-    x0_gen = input_gen.flow_from_directory(
-        directory,
-        target_size=img_sz,
-        color_mode="grayscale",
-        classes=['image0'],
-        class_mode=None,
-        batch_size=batch_sz,
-        seed=1,
-        interpolation='nearest'
-    )
-    x1_gen = input_gen.flow_from_directory(
-        directory,
-        target_size=img_sz,
-        color_mode="grayscale",
-        classes=['image1'],
-        class_mode=None,
-        batch_size=batch_sz,
-        seed=1,
-        interpolation='nearest'
-    )
-    x2_gen = input_gen.flow_from_directory(
-        directory,
-        target_size=img_sz,
-        color_mode="grayscale",
-        classes=['image2'],
-        class_mode=None,
-        batch_size=batch_sz,
-        seed=1,
-        interpolation='nearest'
-    )
-    x3_gen = input_gen.flow_from_directory(
-        directory,
-        target_size=img_sz,
-        color_mode="grayscale",
-        classes=['image3'],
-        class_mode=None,
-        batch_size=batch_sz,
-        seed=1,
-        interpolation='nearest'
-    )
+    x_generators = []
+    for i in range(8):
+        x_generators.append(input_gen.flow_from_directory(
+            directory,
+            target_size=(img_sz[0], img_sz[1]),
+            color_mode="grayscale",
+            classes=['image'+str(i)],
+            class_mode=None,
+            batch_size=batch_sz,
+            seed=1,
+            interpolation='nearest'
+        ))
 
-    # Target generators
-    y0_gen = input_gen.flow_from_directory(
-        directory,
-        target_size=img_sz,
-        color_mode="grayscale",
-        classes=['label0'],
-        class_mode=None,
-        batch_size=batch_sz,
-        seed=1,
-        interpolation='nearest'
-    )
-    y1_gen = input_gen.flow_from_directory(
-        directory,
-        target_size=img_sz,
-        color_mode="grayscale",
-        classes=['label1'],
-        class_mode=None,
-        batch_size=batch_sz,
-        seed=1,
-        interpolation='nearest'
-    )
-    y2_gen = input_gen.flow_from_directory(
-        directory,
-        target_size=img_sz,
-        color_mode="grayscale",
-        classes=['label2'],
-        class_mode=None,
-        batch_size=batch_sz,
-        seed=1,
-        interpolation='nearest'
-    )
-    y3_gen = input_gen.flow_from_directory(
-        directory,
-        target_size=img_sz,
-        color_mode="grayscale",
-        classes=['label3'],
-        class_mode=None,
-        batch_size=batch_sz,
-        seed=1,
-        interpolation='nearest'
-    )
+    y_generators = []
+    for i in range(8):
+        y_generators.append(input_gen.flow_from_directory(
+            directory,
+            target_size=(img_sz[0], img_sz[1]),
+            color_mode="grayscale",
+            classes=['label'+str(i)],
+            class_mode=None,
+            batch_size=batch_sz,
+            seed=1,
+        ))
 
-    generator = zip(
-        x0_gen, x1_gen, x2_gen, x3_gen,
-        y0_gen, y1_gen, y2_gen, y3_gen
-    )
+    generators = x_generators + y_generators
 
-    for (x0, x1, x2, x3, y0, y1, y2, y3) in generator:
-        X = np.array([x0, x1, x2, x3]).reshape(batch_sz, 256, 256, 4, 1)
-        Y = np.array([y0, y1, y2, y3]).reshape(batch_sz, 256, 256, 4, 1)
-        # X = np.array([x0, x1, x2, x3]).reshape(batch_sz, 4, 256, 256, 1)
-        # Y = np.array([y0, y1, y2, y3]).reshape(batch_sz, 4, 256, 256, 1)
+    generator = zip(*generators)
+
+    for Xy in generator:
+        xs = [Xy[i] for i in range(8)]
+        X = np.array(xs).reshape(batch_sz, 256, 256, 8, 1)
+        ys = [Xy[i] for i in range(8, 16)]
+        Y = np.array(ys).reshape(batch_sz, 256, 256, 8, 1)
         yield (X, Y)
+
 
 # Data visualization
 # ----------------------------------------------------------------------------
+
 
 def show_augmentation(img_filepath, imageDataGenerator, n_rows=1):
     n_cols = 4
