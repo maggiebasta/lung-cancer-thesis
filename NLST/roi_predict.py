@@ -14,7 +14,7 @@ from preprocess_helpers import resize, normalize
 def get_most_activated_roi(y_pred_mask):
     """
     Given a predicted nodule segmentation mask, returns a pair of coordinates
-    for the lower left and upper right corners of the 32x32 pixel ROI
+    for the lower left and upper right corners of the 50 x 50 pixel ROI
     corresponding to the most activated region
 
     :param y_pred_mask: predicted binary mask for nodules
@@ -39,8 +39,8 @@ def get_most_activated_roi(y_pred_mask):
 
 def get_rois(extracted_path, processed_path, roi_2d_path, roi_3d_path, model):
     """
-    Given a model and original images, predicts and saves the ROI for
-    the nodule
+    Given a model and original images, predicts and saves the 2D (50 x 50) and
+    3D (50 x 50 x 50) ROI for the nodule
 
     :param extracted_path: path to the original (unprocessed) CT image slice
     :param processed_path: path to the processed CT image slice
@@ -74,7 +74,8 @@ def get_rois(extracted_path, processed_path, roi_2d_path, roi_3d_path, model):
                 imsave(f"{roi_2d_path}/{pid}/{im_path}", predicted_roi)
 
                 # 3d
-                with open(f'data/nlst_extracted_3d/{pid}/{im_path[:-4]}.pkl', "rb") as input_file:
+                inpath = f'data/nlst_extracted_3d/{pid}/{im_path[:-4]}.pkl'
+                with open(inpath, "rb") as input_file:
                     cube = pkl.load(input_file)
                 new_dims = cube.shape[1]
                 nodule_pred = cv.resize(
@@ -91,10 +92,8 @@ def get_rois(extracted_path, processed_path, roi_2d_path, roi_3d_path, model):
                 ])
                 if not os.path.isdir(roi_3d_path + '/' + str(pid)):
                     os.mkdir(roi_3d_path + '/' + str(pid))
-                pkl.dump(
-                    predicted_roi,
-                    open(f"{roi_3d_path}/{pid}/{im_path[:-4]}.pkl", "wb")
-                )
+                outpath = f"{roi_3d_path}/{pid}/{im_path[:-4]}.pkl"
+                pkl.dump(predicted_roi, open(outpath, "wb"))
             except (ValueError, IndexError):
                 sys.stdout.write(f"\nNo predicted ROI for {pid} {im_path}\n")
                 pass

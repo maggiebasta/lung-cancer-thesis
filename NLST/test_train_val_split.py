@@ -20,15 +20,21 @@ def ttv_split(
 
     RecurTable = {pid: recurr for _, (pid, recurr) in df_recurr.iterrows()}
 
-    train_ids, test_ids, _, _ = train_test_split(
+    train_ids, test_ids, train_recur, _ = train_test_split(
         list(df_recurr.pid),
         list(df_recurr.recurrence),
         stratify=df_recurr.recurrence,
-        test_size=0.2,
+        test_size=0.1,
         random_state=26
     )
-    val_ids = train_ids[:50]
-    train_ids = train_ids[50:]
+
+    train_ids, val_ids, _, _ = train_test_split(
+        train_ids,
+        train_recur,
+        stratify=train_recur,
+        test_size=0.1,
+        random_state=26
+    )
 
     os.mkdir('data/nlst_train')
     os.mkdir('data/nlst_train/image_full')
@@ -133,6 +139,7 @@ def ttv_split(
             print(f'No ROIs for {pid}')
 
     count = 0
+    PatientLookup = {}
     for pid in test_ids:
         pid_full_path = f'{processed_path}/{pid}'
         pid_roi_2d_path = f'{roi_2d_path}/{pid}'
@@ -164,6 +171,11 @@ def ttv_split(
                     f'data/nlst_test/image_roi_3d/label/{count}.tif',
                     np.array(Image.fromarray(np.array([[label]]), 'L'))
                 )
+                PatientLookup[count] = pid
                 count += 1
         except FileNotFoundError:
             print(f'No ROIs for {pid}')
+    pkl.dump(
+        PatientLookup,
+        open(f'data/nlst_test/image_roi_3d/patient_lookup.pkl', "wb")
+    )

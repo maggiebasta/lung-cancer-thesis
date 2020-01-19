@@ -7,6 +7,12 @@ from skimage import measure
 
 init_notebook_mode(connected=True) 
 
+"""
+Plots 3D volumes
+source code:
+https://www.raddq.com/dicom-processing-segmentation-visualization-in-python/
+"""
+
 
 def make_mesh(image, threshold=.5, step_size=1):
     p = image.transpose(2, 1, 0)
