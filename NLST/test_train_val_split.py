@@ -24,8 +24,8 @@ def ttv_split(
         list(df_recurr.pid),
         list(df_recurr.recurrence),
         stratify=df_recurr.recurrence,
-        test_size=0.1,
-        random_state=26
+        test_size=0.2,
+        random_state=11
     )
 
     train_ids, val_ids, _, _ = train_test_split(
