@@ -184,11 +184,51 @@ def visualize_contours(raw_path, patient_df):
             cmap='gray',
             extent=[0, 512, 512, 0]
         )
-        for roi in rois:
+        for i, roi in enumerate(rois):
             xs, ys = list(zip(*roi))
-            ax.scatter(xs, ys, s=1, alpha=.5)
+            ax.scatter(xs, ys, s=.75- .1*(i+1), alpha=1- .05*(i+1), label=f'radiologist {i+1}')
         ax.set_title(f"Z-Position: {pos[-1]}")
+        ax.legend(markerscale=6)
     return
+
+
+# def get_mask(img, rois):
+#     """
+#     Given an image and its roi (list of contour boundary points), returns a
+#     2D binary mask for the image
+
+#     :param img: 2D numpy array of CT image
+#     :param rois: 1D numpy array of list of boundary points defining ROI
+#     returns: 2D numpy array of image's binary contour
+#     """
+#     x, y = np.mgrid[:img.shape[1], :img.shape[0]]
+
+#     # mesh grid to a list of points
+#     points = np.vstack((x.ravel(), y.ravel())).T
+
+#     # empty mask
+#     masks = np.array([
+#         np.zeros(img.shape[0]*img.shape[1]) for i in range(len(rois))
+#     ])
+
+#     # iteratively add roi regions to mask
+#     for i, roi in enumerate(rois):
+
+#         # from roi to a matplotlib path
+#         path = Path(roi)
+#         xmin, ymin, xmax, ymax = np.asarray(path.get_extents(), dtype=int).ravel()
+
+#         # add points to mask included in the path
+#         masks[i] = np.array(path.contains_points(points))
+
+#     # reshape mask
+#     final_mask = np.zeros(img.shape[0]*img.shape[1])
+#     for m in masks:
+#         final_mask += m
+#     final_mask = np.round(final_mask/len(rois))
+#     img_mask = final_mask.reshape(x.shape).T
+
+#     return img_mask
 
 
 def get_mask(img, rois):
