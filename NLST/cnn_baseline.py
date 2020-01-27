@@ -67,7 +67,7 @@ from tensorflow.keras.layers import (
 def cnn_baseline_3d(input_shape=(50, 50, 50, 1)):
     inputs = Input(shape=input_shape)
 
-    path = Conv3D(filters=64, kernel_size=(3, 3, 3))(inputs)
+    path = Conv3D(filters=32, kernel_size=(3, 3, 3))(inputs)
     path = LeakyReLU(alpha=.1)(path)
 
     path = Conv3D(filters=64, kernel_size=(3, 3, 3))(path)
