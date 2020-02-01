@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 from tensorflow.keras.preprocessing.image import (
-    ImageDataGenerator,
     img_to_array,
     load_img
 )
@@ -32,7 +31,7 @@ def generator(directory, input_gen, target_gen, batch_sz=2, img_sz=(256, 256)):
         class_mode=None,
         batch_size=batch_sz,
         seed=1,
-        interpolation='nearest', 
+        interpolation='nearest',
         subset='training'
     )
 
@@ -75,17 +74,3 @@ def show_augmentation(img_filepath, imageDataGenerator, n_rows=1):
     plt.show()
     return
 
-
-def show_sample(generator):
-    batch = next(generator)
-    x = batch[0][0]
-    y = batch[1][0]
-
-    size = (5, 5)
-    plt.figure(figsize=size)
-    plt.imshow(x[:, :, 0], cmap='bone')
-    plt.show()
-    plt.figure(figsize=size)
-    plt.imshow(y[:, :, 0], cmap='bone')
-    plt.show()
-    return

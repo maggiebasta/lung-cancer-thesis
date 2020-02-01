@@ -1,8 +1,5 @@
-import itertools
-import math 
 import os
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pydicom
@@ -66,7 +63,7 @@ def get_series_uid(dirname):
     return series_uid.text
 
 
-def get_uids_df(dirname):
+def get_uids_table(dirname):
     """
     Given the path to the directory with the CT files for a patient,
     returns a dataframe containing the UIDs for all CT images in the
@@ -95,7 +92,7 @@ def get_uids_df(dirname):
     return df
 
 
-def get_rois_df(dirname):
+def get_rois_table(dirname):
     """
     Given the path to the directory with the CT files for a patient,
     returns a dataframe containing all ROIs for all contoured images
@@ -121,7 +118,7 @@ def get_rois_df(dirname):
                         for point in edgeMaps:
                             x = point.find('{http://www.nih.gov}xCoord').text
                             y = point.find('{http://www.nih.gov}yCoord').text
-                            region.append((int(x),int(y)))
+                            region.append((int(x), int(y)))
                         if uid in ROIs:
                             ROIs[uid][0].append(region)
                         else:
@@ -144,7 +141,7 @@ def get_rois_df(dirname):
     return df
 
 
-def get_patient_df(raw_path, patient_id):
+def get_patient_table(raw_path, patient_id):
     """
     Given a patient ID, returns a "summarizing" dataframe for the contoured
     images of the patient - that is for each image, the UID, the ROI and the
@@ -155,80 +152,9 @@ def get_patient_df(raw_path, patient_id):
     return: dataframe with image UIDs, paths to images w/ contours and contours
     """
     ct_path = find_ct_path(raw_path, patient_id)
-    df1 = get_uids_df(ct_path)
-    df2 = get_rois_df(ct_path)
+    df1 = get_uids_table(ct_path)
+    df2 = get_rois_table(ct_path)
     return df2.join(df1, how='inner')
-
-
-def visualize_contours(raw_path, patient_df):
-    """
-    Given a datafraem generated from the get_patient_df() function above,
-    plots the images with contours overlayed
-
-    :param patient_df: patient summary DatFrame from get_patient_df() function
-    return: None
-    """
-    nrows = int(math.ceil(len(patient_df)/3))
-    ncols = 3
-
-    fig, axs = plt.subplots(nrows, ncols, figsize=(20, nrows*7))
-    for ax, row in zip(axs.reshape(-1), patient_df.iterrows()):
-        path = row[1]['path']
-        pos = row[1]['position']
-        rois = row[1]['ROIs']
-
-        ds = pydicom.dcmread(path)
-        ax.imshow(
-            ds.pixel_array,
-            vmin=0, vmax=2048,
-            cmap='gray',
-            extent=[0, 512, 512, 0]
-        )
-        for i, roi in enumerate(rois):
-            xs, ys = list(zip(*roi))
-            ax.scatter(xs, ys, s=.75- .1*(i+1), alpha=1- .05*(i+1), label=f'radiologist {i+1}')
-        ax.set_title(f"Z-Position: {pos[-1]}")
-        ax.legend(markerscale=6)
-    return
-
-
-# def get_mask(img, rois):
-#     """
-#     Given an image and its roi (list of contour boundary points), returns a
-#     2D binary mask for the image
-
-#     :param img: 2D numpy array of CT image
-#     :param rois: 1D numpy array of list of boundary points defining ROI
-#     returns: 2D numpy array of image's binary contour
-#     """
-#     x, y = np.mgrid[:img.shape[1], :img.shape[0]]
-
-#     # mesh grid to a list of points
-#     points = np.vstack((x.ravel(), y.ravel())).T
-
-#     # empty mask
-#     masks = np.array([
-#         np.zeros(img.shape[0]*img.shape[1]) for i in range(len(rois))
-#     ])
-
-#     # iteratively add roi regions to mask
-#     for i, roi in enumerate(rois):
-
-#         # from roi to a matplotlib path
-#         path = Path(roi)
-#         xmin, ymin, xmax, ymax = np.asarray(path.get_extents(), dtype=int).ravel()
-
-#         # add points to mask included in the path
-#         masks[i] = np.array(path.contains_points(points))
-
-#     # reshape mask
-#     final_mask = np.zeros(img.shape[0]*img.shape[1])
-#     for m in masks:
-#         final_mask += m
-#     final_mask = np.round(final_mask/len(rois))
-#     img_mask = final_mask.reshape(x.shape).T
-
-#     return img_mask
 
 
 def get_mask(img, rois):
@@ -253,7 +179,9 @@ def get_mask(img, rois):
 
         # from roi to a matplotlib path
         path = Path(roi)
-        xmin, ymin, xmax, ymax = np.asarray(path.get_extents(), dtype=int).ravel()
+        xmin, ymin, xmax, ymax = np.asarray(
+            path.get_extents(), dtype=int
+        ).ravel()
 
         # add points to mask included in the path
         mask = np.logical_or(mask, np.array(path.contains_points(points)))

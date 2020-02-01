@@ -1,24 +1,19 @@
-import os
-import sys
-
 import cv2 as cv
 import numpy as np
 import scipy
-from skimage.io import imsave, imread
+from matplotlib.path import Path
 from skimage import measure, morphology
 from sklearn.cluster import KMeans
 
+
 def get_lung_mask(img):
+    """
+    Given a 2D axial slice from a lung CT, returns a binary mask of the lung
+    regions in the image
 
-    # threshold for haunsfield units
-    #  = cv.normalize(
-    #     img,
-    #     np.zeros(img.shape),
-    #     -1200,
-    #     600,
-    #     cv.NORM_MINMAX
-    # )
-
+    :param img: 512x512 raw slice
+    return: 512x512 binary mask of lung regions
+    """
     # Find the average pixel value near lungs to renormalize washed out images
     middle = img[100:400, 100:400]
     mean = np.mean(img)
@@ -62,7 +57,7 @@ def get_lung_mask(img):
 
     for N in good_labels:
         mask = mask + np.where(labels == N, 1, 0)
-        mask = morphology.dilation(mask, np.ones([10, 10]))  # one last dilation
+        mask = morphology.dilation(mask, np.ones([10, 10]))  # final dilation
 
     mask[mask > 0] = 1
 
@@ -77,6 +72,12 @@ def get_lung_mask(img):
 
 
 def normalize(img):
+    """
+    Normalizes the image to 0-255 range
+
+    :param img: input image
+    return: normalized image
+    """
     return cv.normalize(
         img,
         np.zeros(img.shape),
@@ -87,27 +88,51 @@ def normalize(img):
 
 
 def resize(img):
+    """
+    Resizes the image from 512x512 to 256x256
+
+    :param img: input image
+    return: normalized image
+    """
     return cv.resize(img, dsize=(256, 256)).astype(np.uint8)
 
 
-def preprocess(datapath, processedpath):
-    os.mkdir(processedpath)
-    os.mkdir(f"{processedpath}/image")
-    os.mkdir(f"{processedpath}/label")
+def get_nodule_mask(img, rois):
+    """
+    Given an image and its roi (list of contour boundary points), returns a
+    2D binary mask for the image
 
-    idxs = range(len(os.listdir(f"{datapath}/image/")))
-    n = len(idxs)
-    for i, idx in enumerate(idxs):
-        sys.stdout.write(f"\rProcessing...{i+1}/{n}")
-        sys.stdout.flush()
-        img = imread(f"{datapath}/image/{idx}.tif")
-        mask = resize(get_lung_mask(img).astype('float'))
-        img = normalize(img)
-        img = resize(img)
-        img = img*mask
-        imsave(f"{processedpath}/image/{idx}.tif", img)
+    :param img: 2D numpy array of CT image
+    :param rois: 1D numpy array of list of boundary points defining ROI
+    returns: 2D numpy array of image's binary contour
+    """
+    x, y = np.mgrid[:img.shape[1], :img.shape[0]]
 
-        mask = imread(f"{datapath}/label/{idx}.tif")
-        mask = resize(mask)
-        imsave(f"{processedpath}/label/{idx}.tif", mask)
-    print(f"\nComplete.")
+    # mesh grid to a list of points
+    points = np.vstack((x.ravel(), y.ravel())).T
+
+    # empty mask
+    mask = np.zeros(img.shape[0]*img.shape[1])
+
+    try:
+        # iteratively add roi regions to mask
+        for roi in rois:
+            # from roi to a matplotlib path
+            path = Path(roi)
+            xmin, ymin, xmax, ymax = np.asarray(
+                path.get_extents(),
+                dtype=int
+            ).ravel()
+
+            # add points to mask included in the path
+            mask = np.logical_or(mask, np.array(path.contains_points(points)))
+
+    # except if image is w/o ROIs (empty mask)
+    except TypeError:
+        pass
+
+    # reshape mask
+    mask = np.array([float(m) for m in mask])
+    img_mask = mask.reshape(x.shape).T
+
+    return img_mask

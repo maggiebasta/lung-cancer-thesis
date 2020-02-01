@@ -1,18 +1,16 @@
 import os
 import pickle
-import shutil
 import sys
 
 import numpy as np
 import pydicom
 from PIL import Image, ImageEnhance
 from skimage.io import imsave, imread
-# from sklearn.model_selection import train_test_split
 
-from lidc_helpers import (
+from helpers import (
     find_ct_path,
     get_mask,
-    get_patient_df,
+    get_patient_table,
     get_series_uid
 )
 
@@ -58,8 +56,8 @@ def extract_train(raw_path, train_extract_path, train_ids):
             continue
 
         # get image and contours for patient images
-        pid_df = get_patient_df(raw_path, patient_id)
-        for row in pid_df.iterrows():
+        table = get_patient_table(raw_path, patient_id)
+        for row in table.iterrows():
             path, rois = row[1].path, row[1].ROIs
             img = pydicom.dcmread(path).pixel_array
             mask = get_mask(img, rois)
@@ -72,13 +70,13 @@ def extract_train(raw_path, train_extract_path, train_ids):
 
 def extract_test(raw_path, test_extract_path, test_ids):
     """
-    Given path to raw data and an output path, extracts desired slices from
-    raw LIDC-IDRI images and saves them (extracts tumor slices w/ largest
-    tumor area per patient only)
+    Given path to raw data, an output path, and patient ids, extracts
+    desired slices for test partition from raw LIDC-IDRI images and saves
+    them (extracts tumor slices w/ largest stumor area per patient only)
 
     :param raw_path: path to raw data to prepare
     :param test_extract_path: path to directory to save extracted test data
-    :param test_ids: ids for train partition from random train test split
+    :param test_ids: ids for test partition from random train test split
     :return: None
     """
 
@@ -107,7 +105,7 @@ def extract_test(raw_path, test_extract_path, test_ids):
             continue
 
         # get image and contours for patient images
-        pid_df = get_patient_df(raw_path, patient_id)
+        pid_df = get_patient_table(raw_path, patient_id)
 
         # save largest pair only
         largest_pair = [None, None]
@@ -145,7 +143,9 @@ def preprocess_train(datapath, processedpath):
 
         lung_mask = preprocess_helpers.get_lung_mask(img).astype('float')
         if str(idx) + '.tif' in os.listdir('data/special_train_masks'):
-            lung_mask += imread(f'data/special_train_masks/{idx}.tif').astype('float')
+            lung_mask += imread(
+                f'data/special_train_masks/{idx}.tif'
+            ).astype('float')
             lung_mask = np.clip(lung_mask, 0, 1)
         lung_mask = preprocess_helpers.resize(lung_mask)
         if lung_mask.sum() == 0:
@@ -182,7 +182,9 @@ def preprocess_test(datapath, processedpath):
 
         lung_mask = preprocess_helpers.get_lung_mask(img).astype('float')
         if str(idx) + '.tif' in os.listdir('data/special_test_masks'):
-            lung_mask += imread(f'data/special_test_masks/{idx}.tif').astype('float')
+            lung_mask += imread(
+                f'data/special_test_masks/{idx}.tif'
+            ).astype('float')
             lung_mask = np.clip(lung_mask, 0, 1)
         lung_mask = preprocess_helpers.resize(lung_mask)
 
@@ -205,7 +207,3 @@ def preprocess_test(datapath, processedpath):
         mask = preprocess_helpers.resize(mask)
         imsave(f'{processedpath}/label/{idx}.tif', mask)
     print(f'\nComplete.')
-
-
-if __name__ == "__main__":
-    pass
