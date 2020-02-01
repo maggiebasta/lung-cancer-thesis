@@ -19,7 +19,6 @@ def get_most_activated_roi(y_pred_mask):
 
     :param y_pred_mask: predicted binary mask for nodules
     """
-
     blobs = y_pred_mask > .1
     blobs_labels = measure.label(blobs, background=0)
     labels = np.unique(blobs_labels)[1:]

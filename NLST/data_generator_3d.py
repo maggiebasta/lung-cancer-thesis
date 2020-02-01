@@ -1,13 +1,12 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from tensorflow.keras.preprocessing.image import (
-    ImageDataGenerator,
     img_to_array,
     load_img
 )
-import sys
+
 """
-Data Loader:
+Data Generator:
 Loads the membrane cell segmentation dataset
 Adapted and simplified from:
 https://github.com/zhixuhao/unet/blob/master/data.py
@@ -15,10 +14,17 @@ and:
 https://github.com/a-martyn/unet/blob/master/model/data_loader.py
 """
 
-# Instantiated joined image and mask generators for model input
+# Instantiate joined image and mask generators for model input
 # ----------------------------------------------------------------------------
 
-def generator(base_directory, input_gen, target_gen, batch_sz=2, img_sz=(50, 50, 50)):
+
+def generator(
+    base_directory,
+    input_gen,
+    target_gen,
+    batch_sz=2,
+    img_sz=(50, 50, 50)
+):
 
     # Input generators
     x_generators = []
@@ -54,8 +60,10 @@ def generator(base_directory, input_gen, target_gen, batch_sz=2, img_sz=(50, 50,
         Y = np.array(Xy[-1]).reshape(batch_sz, 1)
         yield (X, Y)
 
+
 # Data visualization
 # ----------------------------------------------------------------------------
+
 
 def show_augmentation(img_filepath, imageDataGenerator, n_rows=1):
     n_cols = 4
@@ -72,20 +80,5 @@ def show_augmentation(img_filepath, imageDataGenerator, n_rows=1):
         i += 1
         if i > n_rows*n_cols:
             break
-    plt.show()
-    return
-
-
-def show_sample(generator):
-    batch = next(generator)
-    x = batch[0][0]
-    y = batch[1][0]
-
-    size = (5, 5)
-    plt.figure(figsize=size)
-    plt.imshow(x[:, :, 0], cmap='gray')
-    plt.show()
-    plt.figure(figsize=size)
-    plt.imshow(y[:, :, 0], cmap='gray')
     plt.show()
     return
