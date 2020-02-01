@@ -1,9 +1,5 @@
-import itertools
-import math 
 import os
-import sys
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pydicom
@@ -51,7 +47,7 @@ def find_ct_path(raw_path, patient_id):
         return imdir2
 
 
-def get_uids_df(dirname):
+def get_uids_table(dirname):
     """
     Given the path to the directory with the CT files for a patient,
     returns a dataframe containing the UIDs for all CT images in the
@@ -80,6 +76,7 @@ def get_uids_df(dirname):
     df.index.name = 'UID'
     return df
 
+
 def get_series_uid(dirname):
     """
     Given the path to the directory with the CT files for a patient,
@@ -96,7 +93,7 @@ def get_series_uid(dirname):
     return series_uid.text
 
 
-def get_rois_df(dirname):
+def get_rois_table(dirname):
     """
     Given the path to the directory with the CT files for a patient,
     returns a dataframe containing all ROIs for all contoured images
@@ -127,13 +124,13 @@ def get_rois_df(dirname):
                             ROIs[uid][0].append(region)
                         else:
                             ROIs[uid] = [[region]]
-    
+
     # remove contours with less than 3 radiologist markings
     to_delete = []
     for uid, roi in ROIs.items():
         if len(roi[0]) < 3:
             to_delete.append(uid)
-    
+
     for td in to_delete:
         del ROIs[td]
 
@@ -146,23 +143,7 @@ def get_rois_df(dirname):
     return df
 
 
-def get_patient_df(raw_path, patient_id):
-    """
-    Given a patient ID, returns a "summarizing" dataframe for the contoured
-    images of the patient - that is for each image, the UID, the ROI and the
-    path to the image
-
-    :param raw_path: path to raw data
-    :param patient_id: string of patient ID of form LIDC-IDRI-XXXX
-    return: dataframe with image UIDs, paths to images w/ contours and contours
-    """
-    ct_path = find_ct_path(raw_path, patient_id)
-    df1 = get_uids_df(ct_path)
-    df2 = get_rois_df(ct_path)
-    return df2.join(df1, how='inner').sort_values(by=['z-position'])
-
-
-def get_patient_df_v2(raw_path, patient_id):
+def get_patient_table(raw_path, patient_id):
     """
     Given a patient ID, returns a "summarizing" dataframe for the contoured
     images (of interest) for the patient - that is for each image, the UID,
@@ -173,16 +154,18 @@ def get_patient_df_v2(raw_path, patient_id):
     """
 
     ct_path = find_ct_path(raw_path, patient_id)
-    df1 = get_uids_df(ct_path)
-    df2 = get_rois_df(ct_path)
+    df1 = get_uids_table(ct_path)
+    df2 = get_rois_table(ct_path)
 
     df_all = df1.join(df2, how='left').sort_values(by=['z-position'])
     df_all = df_all.reset_index()
     df_rois = df_all.dropna()
 
-    if not len(df_rois): 
+    if not len(df_rois):
         return None
-    thickness =  abs(list(df_all['z-position'])[0] - list(df_all['z-position'])[1])
+    thickness = abs(
+        list(df_all['z-position'])[0] - list(df_all['z-position'])[1]
+    )
     groups = {}
     prev_z = float('inf')
     last_idx = 0
@@ -206,37 +189,6 @@ def get_patient_df_v2(raw_path, patient_id):
     return ret
 
 
-def visualize_contours(raw_path, patient_df):
-    """
-    Given a datafraem generated from the get_patient_df() function above,
-    plots the images with contours overlayed
-
-    :param patient_df: patient summary DatFrame from get_patient_df() function
-    return: None
-    """
-    nrows = int(math.ceil(len(patient_df)/3))
-    ncols = 3
-
-    fig, axs = plt.subplots(nrows, ncols, figsize=(20, nrows*7))
-    for ax, row in zip(axs.reshape(-1), patient_df.iterrows()):
-        path = row[1]['path']
-        pos = row[1]['z-position']
-        rois = row[1]['ROIs']
-
-        ds = pydicom.dcmread(path)
-        ax.imshow(
-            ds.pixel_array,
-            vmin=0, vmax=2048,
-            cmap='gray',
-            extent=[0, 512, 512, 0]
-        )
-        for roi in rois:
-            xs, ys = list(zip(*roi))
-            ax.scatter(xs, ys, s=1, alpha=.5)
-        ax.set_title(f"Z-Position: {pos}")
-    return
-
-
 def get_mask(img, rois):
     """
     Given an image and its roi (list of contour boundary points), returns a
@@ -254,12 +206,14 @@ def get_mask(img, rois):
     # empty mask
     mask = np.zeros(img.shape[0]*img.shape[1])
 
-    try: 
+    try:
         # iteratively add roi regions to mask
         for roi in rois:
             # from roi to a matplotlib path
             path = Path(roi)
-            xmin, ymin, xmax, ymax = np.asarray(path.get_extents(), dtype=int).ravel()
+            xmin, ymin, xmax, ymax = np.asarray(
+                path.get_extents(), dtype=int
+            ).ravel()
 
             # add points to mask included in the path
             mask = np.logical_or(mask, np.array(path.contains_points(points)))

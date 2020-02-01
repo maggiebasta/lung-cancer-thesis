@@ -13,7 +13,7 @@ from sklearn.model_selection import train_test_split
 from lidc_helpers import (
     find_ct_path,
     get_mask,
-    get_patient_df_v2,
+    get_patient_table,
     get_series_uid
 )
 
@@ -35,6 +35,11 @@ def resample(image, pixel_spacing, thickness, new_spacing=[1, 1, 1]):
 
     return image
 
+
+########
+# TODO: PARTITION TRAIN AND TEST BY PATIENT
+# note - not as important as 2D because no multiple slices per nodule
+########
 
 def extract(raw_path, prepped_path):
     """
@@ -71,23 +76,23 @@ def extract(raw_path, prepped_path):
             continue
 
         # get image and contours for patient images
-        pid_dfs = get_patient_df_v2(raw_path, patient_id)
-        if isinstance(pid_dfs, type(None)):
+        tables = get_patient_table(raw_path, patient_id)
+        if isinstance(tables, type(None)):
             continue
 
-        for pid_df in pid_dfs:
-            image = np.array([
-                pydicom.dcmread(r[1].path).pixel_array for r in pid_df.iterrows()
+        for tble in tables:
+            img = np.array([
+                pydicom.dcmread(r[1].path).pixel_array for r in tble.iterrows()
             ])
-            rois = [row[1].ROIs for row in pid_df.iterrows()]
-            mask = np.array([get_mask(im, roi) for im, roi in zip(image, rois)])
+            rois = [row[1].ROIs for row in tble.iterrows()]
+            mask = np.array([get_mask(im, roi) for im, roi in zip(img, rois)])
 
-            thickness = pydicom.dcmread(pid_df.iloc[0].path).SliceThickness
-            spacing = pydicom.dcmread(pid_df.iloc[0].path).PixelSpacing[0]
+            thickness = pydicom.dcmread(tble.iloc[0].path).SliceThickness
+            spacing = pydicom.dcmread(tble.iloc[0].path).PixelSpacing[0]
 
             idx = len(os.listdir(f'{prepped_path}/'))
             pickle.dump(
-                (image, mask, spacing, thickness),
+                (img, mask, spacing, thickness),
                 open(f'{prepped_path}/{idx}.pickle', 'wb')
             )
 
