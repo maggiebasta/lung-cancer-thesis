@@ -71,11 +71,18 @@ def encoder(x):
     main_path = res_block(main_path, [256, 256], [(2, 2), (1, 1)])
     to_decoder.append(main_path)
 
+    main_path = res_block(main_path, [512, 512], [(2, 2), (1, 1)])
+    to_decoder.append(main_path)
+
     return to_decoder
 
 
 def decoder(x, from_encoder):
     main_path = UpSampling2D(size=(2, 2))(x)
+    main_path = concatenate([main_path, from_encoder[3]], axis=3)
+    main_path = res_block(main_path, [256, 256], [(1, 1), (1, 1)])
+
+    main_path = UpSampling2D(size=(2, 2))(main_path)
     main_path = concatenate([main_path, from_encoder[2]], axis=3)
     main_path = res_block(main_path, [256, 256], [(1, 1), (1, 1)])
 
@@ -94,8 +101,14 @@ def unet_2d_res(input_shape=(256, 256, 1)):
     inputs = Input(shape=input_shape)
 
     to_decoder = encoder(inputs)
-
-    path = res_block(to_decoder[2], [512, 512], [(2, 2), (1, 1)])
+    path = BatchNormalization()(to_decoder[-1])
+    path = Activation(activation='relu')(path)
+    path = Conv2D(
+        filters=1024,
+        kernel_size=(3, 3),
+        padding='same',
+        strides=(2, 2)
+    )(path)
 
     path = decoder(path, from_encoder=to_decoder)
 

@@ -86,7 +86,7 @@ def encoder(x):
 
 
 def decoder(x, from_encoder):
-    main_path = UpSampling3D(size=(2, 2, 1))(x)
+    main_path = UpSampling3D(size=(2, 2, 2))(x)
     main_path = concatenate([main_path, from_encoder[2]], axis=4)
     main_path = res_block(main_path, [256, 256], [(1, 1, 1), (1, 1, 1)])
 
@@ -106,7 +106,7 @@ def unet3d_res(input_shape=(256, 256, 8, 1)):
 
     to_decoder = encoder(inputs)
 
-    path = res_block(to_decoder[2], [512, 512], [(2, 2, 1), (1, 1, 1)])
+    path = res_block(to_decoder[2], [512, 512], [(2, 2, 2), (1, 1, 1)])
 
     path = decoder(path, from_encoder=to_decoder)
 

@@ -10,7 +10,7 @@ from PIL import Image, ImageEnhance
 from skimage.io import imsave
 from sklearn.model_selection import train_test_split
 
-from lidc_helpers import (
+from helpers import (
     find_ct_path,
     get_mask,
     get_patient_table,
