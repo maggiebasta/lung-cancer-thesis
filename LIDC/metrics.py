@@ -61,6 +61,28 @@ def get_most_activated_roi(y_pred_mask):
     return [(x_center-16, y_center-16), (x_center+16, y_center+16)]
 
 
+def get_most_activated_roi_mask(y_pred_mask):
+    if y_pred_mask.max() < .1:
+        return y_pred_mask
+    y_pred_mask = y_pred_mask.reshape(256, 256)
+    blobs = y_pred_mask > .1
+    blobs_labels = measure.label(blobs, background=0)
+    labels = np.unique(blobs_labels)[1:]
+    activations = []
+    for label in labels:
+        blob_activation = 0.
+        idxs = np.argwhere(blobs_labels == label)
+        for idx_x, idx_y in idxs:
+            blob_activation += y_pred_mask[idx_x][idx_y]
+        activations.append(blob_activation/len(idxs))
+    new_pred_mask = np.zeros(y_pred_mask.shape)
+    for i in range(256):
+        for j in range(256):
+            if blobs_labels[i][j] == np.argmax(activations) + 1:
+                new_pred_mask[i][j] = y_pred_mask[i][j]
+    return new_pred_mask
+
+
 def get_grouped_nodule_coords(y_true_mask):
     y_true_mask = y_true_mask.reshape(256, 256)
     blobs = y_true_mask == 1
