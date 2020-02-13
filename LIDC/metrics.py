@@ -45,7 +45,7 @@ def dice_coef(y_true, y_pred, smooth=1):
 
 def get_most_activated_roi(y_pred_mask):
     y_pred_mask = y_pred_mask.reshape(256, 256)
-    blobs = y_pred_mask > .05
+    blobs = y_pred_mask > .1
     blobs_labels = measure.label(blobs, background=0)
     labels = np.unique(blobs_labels)[1:]
     activations = []
