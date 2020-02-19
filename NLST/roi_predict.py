@@ -50,7 +50,9 @@ def get_rois(extracted_path, processed_path, roi_2d_path, roi_3d_path, model):
     os.mkdir(roi_3d_path)
     pids = os.listdir(processed_path)
     n = len(pids)
+    Areas = {}
     for i, pid in enumerate(pids):
+        max_area = 0
         sys.stdout.write(f"\rGetting ROIs...{i+1}/{n}")
         sys.stdout.flush()
         for im_path in os.listdir(processed_path + '/' + str(pid)):
@@ -60,6 +62,7 @@ def get_rois(extracted_path, processed_path, roi_2d_path, roi_3d_path, model):
 
             # reshape from (256, 256, 1)
             nodule_pred = model.predict(x).reshape(256, 256)
+            max_area = max(max_area, nodule_pred.sum())
             try:
                 # 2d
                 mins, maxs = get_most_activated_roi(nodule_pred)
@@ -96,4 +99,6 @@ def get_rois(extracted_path, processed_path, roi_2d_path, roi_3d_path, model):
             except (ValueError, IndexError):
                 sys.stdout.write(f"\nNo predicted ROI for {pid} {im_path}\n")
                 pass
+        Areas[pid] = max_area
+    pkl.dump(Areas, open('data/areas.pkl', "wb"))
     print(f"\nComplete.")

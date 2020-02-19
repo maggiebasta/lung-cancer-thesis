@@ -36,6 +36,9 @@ def ttv_split(
         test_size=0.2,
         random_state=11
     )
+    pkl.dump(train_ids, open(f'data/train_ids.pkl', "wb"))
+    pkl.dump(test_ids, open(f'data/test_ids.pkl', "wb"))
+
     train_ids, val_ids, _, _ = train_test_split(
         train_ids,
         train_recur,
