@@ -77,6 +77,7 @@ def get_rois(extracted_path, processed_path, roi_2d_path, roi_3d_path, model):
         max_area = 0
         perimeter = 0
         diameter = 0
+        atten = 0
         sys.stdout.write(f"\rGetting ROIs...{i+1}/{n}")
         sys.stdout.flush()
         for im_path in os.listdir(processed_path + '/' + str(pid)):
@@ -133,10 +134,11 @@ def get_rois(extracted_path, processed_path, roi_2d_path, roi_3d_path, model):
                                 diameter,
                                 np.sqrt((x1-x2)**2+(y1-y2)**2)
                             )
+                    atten = (cube[int(len(cube)/2)]*new_pred).mean()
 
             except (ValueError, IndexError):
                 sys.stdout.write(f"\nNo predicted ROI for {pid} {im_path}\n")
                 pass
-        Extracted[pid] = max_area, perimeter, diameter
+        Extracted[pid] = max_area, perimeter, diameter, atten
     pkl.dump(Extracted, open('data/geometric_data.pkl', "wb"))
     print(f"\nComplete.")
