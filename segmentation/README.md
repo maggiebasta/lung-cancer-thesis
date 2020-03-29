@@ -1,2 +1,1 @@
-# lung-cancer-thesis
-
+# Segmentation Stage
