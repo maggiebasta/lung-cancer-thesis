@@ -1,4 +1,10 @@
-*data/
+*Downloader.ipynb
+*recurrence_prediction/data/
+*segmentation/unet_2d/data/
+*segmentation/unet_3d/data/
+*raw_data
+*segmentation/aapm/data/aapm_extracted
+*segmentation/aapm/data/aapm_processed
 *checkpoint.ipynb
 *.pyc
 *models
