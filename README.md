@@ -31,3 +31,4 @@ The project relies on the following dependencies:
 9. [Scikit-learn](https://scikit-learn.org/stable/)
 10. [Tensorflow](https://www.tensorflow.org/) (version 1.14.0 used)
 
+*Note: this project was implemented using an AWS P3 EC2 instance. Using a local machine will likely be insufficient to run (most of) the code in this repo*
