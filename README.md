@@ -27,6 +27,8 @@ The project requires a significant amount of external data to run. Not all of th
 - [SPIE-AAPM](https://wiki.cancerimagingarchive.net/display/Public/SPIE-AAPM+Lung+CT+Challenge) (publically available)
 - [NLST](https://cdas.cancer.gov/nlst/): (not publically available, interested proejcts can submit requests)
 
+The expected directory structure is provided in the README of each folder. 
+
 ## Dependencies
 The project relies on the following dependencies: 
 1. [Matplotlib](https://matplotlib.org/)
