@@ -24,7 +24,7 @@ This folder contains the code used to run the tests on the SPIE-AAPM dataset.
 
 
 ## Expected directory structure
-The directory structure expected to run this code, including datasets is provided below.
+The directory structure expected to run this code, *including datasets* is provided below.
 ```
 segmentation
     ├── aapm
