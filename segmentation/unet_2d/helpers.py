@@ -99,39 +99,43 @@ def get_rois_table(dirname):
     where index=UID
 
     :param dirname: absolute path to the folder containing CT images
-    for a given patient
+    for a given patien
     return: list of ROI boundaries defined in the CT image XML file
     """
-    rootfile = [f for f in os.listdir(dirname) if f.endswith(".xml")][0]
-    root = ET.parse(os.path.join(dirname, rootfile))
     ROIs = {}
-    for session in root.findall('{http://www.nih.gov}readingSession'):
-        for readNodule in session.findall('{http://www.nih.gov}unblindedReadNodule'):
-            for roi in readNodule.findall('{http://www.nih.gov}roi'):
-                region = []
-                uid = roi.find('{http://www.nih.gov}imageSOP_UID').text
-                inclusion = roi.find('{http://www.nih.gov}inclusion').text
-                edgeMaps = roi.findall('{http://www.nih.gov}edgeMap')
-                if inclusion:
-                    # exlude > 3mm nodules
-                    if len(edgeMaps) > 1:
-                        for point in edgeMaps:
-                            x = point.find('{http://www.nih.gov}xCoord').text
-                            y = point.find('{http://www.nih.gov}yCoord').text
-                            region.append((int(x), int(y)))
-                        if uid in ROIs:
-                            ROIs[uid][0].append(region)
-                        else:
-                            ROIs[uid] = [[region]]
+    xmls = [f for f in os.listdir(dirname) if f.endswith(".xml")]
+    if len(xmls) < 1:
+        print(f"\nNo XML found for {dirname}\n")
+    else:
+        rootfile = xmls[0]
+        root = ET.parse(os.path.join(dirname, rootfile))
+        for session in root.findall('{http://www.nih.gov}readingSession'):
+            for readNodule in session.findall('{http://www.nih.gov}unblindedReadNodule'):
+                for roi in readNodule.findall('{http://www.nih.gov}roi'):
+                    region = []
+                    uid = roi.find('{http://www.nih.gov}imageSOP_UID').text
+                    inclusion = roi.find('{http://www.nih.gov}inclusion').text
+                    edgeMaps = roi.findall('{http://www.nih.gov}edgeMap')
+                    if inclusion:
+                        # exlude > 3mm nodules
+                        if len(edgeMaps) > 1:
+                            for point in edgeMaps:
+                                x = point.find('{http://www.nih.gov}xCoord').text
+                                y = point.find('{http://www.nih.gov}yCoord').text
+                                region.append((int(x), int(y)))
+                            if uid in ROIs:
+                                ROIs[uid][0].append(region)
+                            else:
+                                ROIs[uid] = [[region]]
 
-    # remove contours with less than 3 radiologist markings
-    to_delete = []
-    for uid, roi in ROIs.items():
-        if len(roi[0]) < 3:
-            to_delete.append(uid)
+        # remove contours with less than 3 radiologist markings
+        to_delete = []
+        for uid, roi in ROIs.items():
+            if len(roi[0]) < 3:
+                to_delete.append(uid)
 
-    for td in to_delete:
-        del ROIs[td]
+        for td in to_delete:
+            del ROIs[td]
     df = pd.DataFrame.from_dict(
         ROIs,
         orient='index',

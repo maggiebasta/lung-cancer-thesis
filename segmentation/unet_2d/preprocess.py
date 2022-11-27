@@ -14,6 +14,7 @@ from helpers import (
     get_series_uid
 )
 
+sys.path.append('../')
 sys.path.append('../../')
 import preprocess_helpers
 
@@ -48,12 +49,12 @@ def extract_train(raw_path, train_extract_path, train_ids):
             f"{len(os.listdir(f'{train_extract_path}/image/'))}"
         )
         sys.stdout.flush()
-        # check if patient in LUMA
-        uids = pickle.load(open('uids.pkl', 'rb'))
-        if not os.path.exists(raw_path + patient_id):
-            continue
-        if get_series_uid(find_ct_path(raw_path, patient_id)) not in uids:
-            continue
+        # # check if patient in LUMA
+        # uids = pickle.load(open('uids.pkl', 'rb'))
+        # if not os.path.exists(raw_path + patient_id):
+        #     continue
+        # if get_series_uid(find_ct_path(raw_path, patient_id)) not in uids:
+        #     continue
 
         # get image and contours for patient images
         table = get_patient_table(raw_path, patient_id)
@@ -97,12 +98,12 @@ def extract_test(raw_path, test_extract_path, test_ids):
             f"{len(os.listdir(f'{test_extract_path}/image/'))}"
         )
         sys.stdout.flush()
-        # check if patient in LUMA
-        uids = pickle.load(open('uids.pkl', 'rb'))
-        if not os.path.exists(raw_path + patient_id):
-            continue
-        if get_series_uid(find_ct_path(raw_path, patient_id)) not in uids:
-            continue
+        # # check if patient in LUMA
+        # uids = pickle.load(open('uids.pkl', 'rb'))
+        # if not os.path.exists(raw_path + patient_id):
+        #     continue
+        # if get_series_uid(find_ct_path(raw_path, patient_id)) not in uids:
+        #     continue
 
         # get image and contours for patient images
         pid_df = get_patient_table(raw_path, patient_id)
