@@ -143,11 +143,11 @@ def preprocess_train(datapath, processedpath):
         img = imread(f'{datapath}/image/{idx}.tif')
 
         lung_mask = preprocess_helpers.get_lung_mask(img).astype('float')
-        if str(idx) + '.tif' in os.listdir('data/special_train_masks'):
-            lung_mask += imread(
-                f'data/special_train_masks/{idx}.tif'
-            ).astype('float')
-            lung_mask = np.clip(lung_mask, 0, 1)
+        # if str(idx) + '.tif' in os.listdir('data/special_train_masks'):
+        #     lung_mask += imread(
+        #         f'data/special_train_masks/{idx}.tif'
+        #     ).astype('float')
+        #     lung_mask = np.clip(lung_mask, 0, 1)
         lung_mask = preprocess_helpers.resize(lung_mask)
         if lung_mask.sum() == 0:
             sys.stdout.write(
@@ -182,11 +182,11 @@ def preprocess_test(datapath, processedpath):
         img = imread(f'{datapath}/image/{idx}.tif')
 
         lung_mask = preprocess_helpers.get_lung_mask(img).astype('float')
-        if str(idx) + '.tif' in os.listdir('data/special_test_masks'):
-            lung_mask += imread(
-                f'data/special_test_masks/{idx}.tif'
-            ).astype('float')
-            lung_mask = np.clip(lung_mask, 0, 1)
+        # if str(idx) + '.tif' in os.listdir('data/special_test_masks'):
+        #     lung_mask += imread(
+        #         f'data/special_test_masks/{idx}.tif'
+        #     ).astype('float')
+        #     lung_mask = np.clip(lung_mask, 0, 1)
         lung_mask = preprocess_helpers.resize(lung_mask)
 
         if lung_mask.sum() == 0:
