@@ -3,6 +3,7 @@
 *segmentation/unet_2d/data/
 *segmentation/unet_3d/data/
 *raw_data
+*data
 *segmentation/aapm/data/aapm_extracted
 *segmentation/aapm/data/aapm_processed
 *checkpoint.ipynb
@@ -11,3 +12,5 @@
 *GENKI*
 *.hdf5
 *.pkl
+*.ipynb_checkpoints
+*__pycache__

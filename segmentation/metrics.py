@@ -13,11 +13,13 @@ def convert_to_logits(y_pred):
 
 
 def weighted_cross_entropy(y_true, y_pred):
+    print(y_true)
+    print(y_pred)
     y_pred = convert_to_logits(y_pred)
     loss = tf.nn.weighted_cross_entropy_with_logits(
         logits=y_pred,
         labels=y_true,
-        pos_weight=12
+        pos_weight=10e10000
     )
     return tf.reduce_mean(loss)
 

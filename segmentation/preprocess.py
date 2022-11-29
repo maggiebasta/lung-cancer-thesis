@@ -16,7 +16,7 @@ from helpers import (
 
 sys.path.append('../')
 sys.path.append('../../')
-import preprocess_helpers
+import helpers
 
 
 def extract_train(raw_path, train_extract_path, train_ids):
@@ -57,14 +57,17 @@ def extract_train(raw_path, train_extract_path, train_ids):
         #     continue
 
         # get image and contours for patient images
-        table = get_patient_table(raw_path, patient_id)
-        for row in table.iterrows():
-            path, rois = row[1].path, row[1].ROIs
-            img = pydicom.dcmread(path).pixel_array
-            mask = get_mask(img, rois)
-            idx = len(os.listdir(f'{train_extract_path}/image/'))
-            imsave(f'{train_extract_path}/image/{idx}.tif', img)
-            imsave(f'{train_extract_path}/label/{idx}.tif', mask)
+        try:
+            table = get_patient_table(raw_path, patient_id)
+            for row in table.iterrows():
+                path, rois = row[1].path, row[1].ROIs
+                img = pydicom.dcmread(path).pixel_array
+                mask = get_mask(img, rois)
+                idx = len(os.listdir(f'{train_extract_path}/image/'))
+                imsave(f'{train_extract_path}/image/{idx}.tif', img)
+                imsave(f'{train_extract_path}/label/{idx}.tif', mask)
+        except:
+            print(f"\nError processing {patient_id}")
 
     print(f'\nComplete.')
 
@@ -106,27 +109,31 @@ def extract_test(raw_path, test_extract_path, test_ids):
         #     continue
 
         # get image and contours for patient images
-        pid_df = get_patient_table(raw_path, patient_id)
 
-        # save largest pair only
-        largest_pair = [None, None]
-        largest_size = 0
-        for row in pid_df.iterrows():
-            path, rois = row[1].path, row[1].ROIs
-            img = pydicom.dcmread(path).pixel_array
-            mask = get_mask(img, rois)
-            size = sum([sum(row) for row in mask])
-            if size > largest_size:
-                largest_pair = [img, mask]
-                largest_size = size
-        if not largest_size:
-            continue
-        im, msk = largest_pair
+        try:
+            pid_df = get_patient_table(raw_path, patient_id)
 
-        idx = len(os.listdir(f'{test_extract_path}/image/'))
-        imsave(f'{test_extract_path}/image/{idx}.tif', im)
-        imsave(f'{test_extract_path}/label/{idx}.tif', msk)
+            # save largest pair only
+            largest_pair = [None, None]
+            largest_size = 0
+            for row in pid_df.iterrows():
+                path, rois = row[1].path, row[1].ROIs
+                img = pydicom.dcmread(path).pixel_array
+                mask = get_mask(img, rois)
+                size = sum([sum(row) for row in mask])
+                if size > largest_size:
+                    largest_pair = [img, mask]
+                    largest_size = size
+            if not largest_size:
+                continue
+            im, msk = largest_pair
 
+            idx = len(os.listdir(f'{test_extract_path}/image/'))
+            imsave(f'{test_extract_path}/image/{idx}.tif', im)
+            imsave(f'{test_extract_path}/label/{idx}.tif', msk)
+        except:
+            print(f"\nError processing {patient_id}")
+    
     print(f'\nComplete.')
 
 
@@ -142,20 +149,20 @@ def preprocess_train(datapath, processedpath):
         sys.stdout.flush()
         img = imread(f'{datapath}/image/{idx}.tif')
 
-        lung_mask = preprocess_helpers.get_lung_mask(img).astype('float')
+        lung_mask = helpers.get_lung_mask(img).astype('float')
         # if str(idx) + '.tif' in os.listdir('data/special_train_masks'):
         #     lung_mask += imread(
         #         f'data/special_train_masks/{idx}.tif'
         #     ).astype('float')
         #     lung_mask = np.clip(lung_mask, 0, 1)
-        lung_mask = preprocess_helpers.resize(lung_mask)
+        lung_mask = helpers.resize(lung_mask)
         if lung_mask.sum() == 0:
             sys.stdout.write(
                 f'\rEmpty lung field returned for image {idx}. Skipping\n'
             )
             continue
-        img = preprocess_helpers.normalize(img)
-        img = preprocess_helpers.resize(img)
+        img = helpers.normalize(img)
+        img = helpers.resize(img)
         img = img*lung_mask
         pil_im = Image.fromarray(img)
         enhancer = ImageEnhance.Contrast(pil_im)
@@ -164,7 +171,7 @@ def preprocess_train(datapath, processedpath):
         imsave(f'{processedpath}/image/{idx}.tif', np_im)
 
         mask = imread(f'{datapath}/label/{idx}.tif')
-        mask = preprocess_helpers.resize(mask)
+        mask = helpers.resize(mask)
         imsave(f'{processedpath}/label/{idx}.tif', mask)
     print(f'\nComplete.')
 
@@ -181,21 +188,21 @@ def preprocess_test(datapath, processedpath):
         sys.stdout.flush()
         img = imread(f'{datapath}/image/{idx}.tif')
 
-        lung_mask = preprocess_helpers.get_lung_mask(img).astype('float')
+        lung_mask = helpers.get_lung_mask(img).astype('float')
         # if str(idx) + '.tif' in os.listdir('data/special_test_masks'):
         #     lung_mask += imread(
         #         f'data/special_test_masks/{idx}.tif'
         #     ).astype('float')
         #     lung_mask = np.clip(lung_mask, 0, 1)
-        lung_mask = preprocess_helpers.resize(lung_mask)
+        lung_mask = helpers.resize(lung_mask)
 
         if lung_mask.sum() == 0:
             sys.stdout.write(
                 f'\rEmpty lung field returned for image {idx}. Skipping\n'
             )
             continue
-        img = preprocess_helpers.normalize(img)
-        img = preprocess_helpers.resize(img)
+        img = helpers.normalize(img)
+        img = helpers.resize(img)
 
         img = img*lung_mask
         pil_im = Image.fromarray(img)
@@ -205,6 +212,6 @@ def preprocess_test(datapath, processedpath):
         imsave(f'{processedpath}/image/{idx}.tif', np_im)
 
         mask = imread(f'{datapath}/label/{idx}.tif')
-        mask = preprocess_helpers.resize(mask)
+        mask = helpers.resize(mask)
         imsave(f'{processedpath}/label/{idx}.tif', mask)
     print(f'\nComplete.')

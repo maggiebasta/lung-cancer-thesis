@@ -1,7 +1,10 @@
 # Convolutional Neural Networks for the Automated Segmentation and Recurrence Risk Prediction of Surgically Resected Lung Tumors
 
+*NOTE: THIS BRANCH IS FOR THE SEGMENTATION COMPONENT ONLY*
+
 ## Overview 
 Welcome to the repository for my undergraduate senior thesis - *Convolutional Neural Networks for the Automated Segmentation and Recurrence Risk Prediction of Surgically Resected Lung Tumors*. This repository contains all of the code used to implement the models and experiments discussed in the thesis. The pipeline is illustrated below. 
+
 
 ## Pipeline
 <p align="center">
