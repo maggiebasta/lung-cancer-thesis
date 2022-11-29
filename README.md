@@ -34,15 +34,17 @@ The expected directory structure is provided in the README of each folder.
 
 ## Dependencies
 The project relies on the following dependencies: 
-1. [Matplotlib](https://matplotlib.org/)
-2. [Numpy](https://numpy.org/)
-3. [OpenCv](https://opencv.org/)
-4. [Pandas](https://pandas.pydata.org/)
-5. [Pickle](https://docs.python.org/3/library/pickle.html)
-6. [PIL](https://www.pythonware.com/products/pil/)
-7. [Pydicom](https://pydicom.github.io/)
-8. [Scikit-image](https://scikit-image.org/docs/dev/api/skimage.html)
-9. [Scikit-learn](https://scikit-learn.org/stable/)
-10. [Tensorflow](https://www.tensorflow.org/)
+1. [Tensorflow](https://www.tensorflow.org/) (1.4.0 used)
+2. [Matplotlib](https://matplotlib.org/)
+3. [Numpy](https://numpy.org/)
+4. [OpenCv](https://opencv.org/)
+5. [Pandas](https://pandas.pydata.org/)
+6. [Pickle](https://docs.python.org/3/library/pickle.html)
+7. [PIL](https://www.pythonware.com/products/pil/)
+8. [Pydicom](https://pydicom.github.io/)
+9. [Scikit-image](https://scikit-image.org/docs/dev/api/skimage.html)
+10. [Scikit-learn](https://scikit-learn.org/stable/)
+11. Keras=2.0.8 required if using Tensorflow=1.14.0
+
 
 *Note: this project was implemented using a GPU optimized AWS EC2 instance. A local machine will most likely not be able to run (the majority of) the code in this repo.*

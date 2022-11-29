@@ -19,7 +19,7 @@ def weighted_cross_entropy(y_true, y_pred):
     loss = tf.nn.weighted_cross_entropy_with_logits(
         logits=y_pred,
         labels=y_true,
-        pos_weight=10e10000
+        pos_weight=12
     )
     return tf.reduce_mean(loss)
 
